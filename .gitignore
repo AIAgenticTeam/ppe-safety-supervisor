@@ -1,0 +1,61 @@
+# --- secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.key
+credentials.json
+secrets.toml
+.streamlit/secrets.toml
+
+# --- datasets and weights: far too large for git ---
+datasets/
+data/
+*.zip
+*.tar
+*.tar.gz
+*.pt
+*.onnx
+*.engine
+*.cache
+
+# --- training output ---
+runs/
+wandb/
+lightning_logs/
+
+# --- generated media ---
+evidence/
+frames/
+crops/
+fixtures/crops/
+fixtures/frames/
+*.mp4
+*.avi
+*.mov
+
+# --- vector index (rebuild from source, don't commit) ---
+faiss_index/
+chroma/
+*.faiss
+*.pkl
+
+# --- local database ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- editors / os ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

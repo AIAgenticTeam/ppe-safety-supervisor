@@ -1,0 +1,65 @@
+{
+  "event_id": "evt_20260907T072600_cam_3_t17",
+  "captured_at": "2026-09-07T07:26:00+03:00",
+  "camera_id": "cam_3",
+  "zone": {
+    "name": "grinding_station",
+    "label": "Bay 3 - grinding station",
+    "required_ppe": [
+      "helmet",
+      "gloves",
+      "goggles"
+    ],
+    "severity_multiplier": 2.0
+  },
+  "subject": {
+    "track_id": 17,
+    "bbox": [
+      520,
+      285,
+      700,
+      705
+    ],
+    "detection_confidence": 0.94,
+    "height_px": 420,
+    "worker_ref": "W-0412"
+  },
+  "ppe": {
+    "present": {
+      "helmet": 0.9,
+      "goggles": 0.71
+    },
+    "missing": [
+      "gloves"
+    ],
+    "indeterminate": []
+  },
+  "status": "violation",
+  "confirmation": {
+    "frames_observed": 10,
+    "frames_missing": 10,
+    "window_seconds": 2.0,
+    "rule": "8_of_10",
+    "confirmed": true
+  },
+  "evidence": {
+    "crop_url": null,
+    "frame_url": null,
+    "crop_path": "fixtures/crops/evt_20260907T072600_cam_3_t17.jpg",
+    "frame_path": "fixtures/frames/cam_3_20260907T072600.jpg"
+  },
+  "detector": {
+    "weights": "ppe-presence-s960-3/weights/best.pt",
+    "imgsz": 960,
+    "recall": {
+      "helmet": 0.796,
+      "vest": 0.816,
+      "boots": 0.742,
+      "goggles": 0.723,
+      "gloves": 0.733,
+      "Person": 0.867
+    }
+  },
+  "reasons": [],
+  "schema_version": "1.0"
+}

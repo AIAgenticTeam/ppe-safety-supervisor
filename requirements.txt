@@ -1,0 +1,27 @@
+# ---- perception (lane A) ----
+ultralytics>=8.4.148
+opencv-python>=4.10
+pillow>=10.0
+pyyaml>=6.0
+
+# ---- knowledge base + RAG (lane B) ----
+langchain>=0.3
+langchain-community>=0.3
+faiss-cpu>=1.8
+sentence-transformers>=3.0
+ragas>=0.2
+
+# ---- agents (lane C) ----
+langgraph>=0.2
+langchain-openai>=0.2
+python-dotenv>=1.0
+
+# ---- app + observability (lane D) ----
+fastapi>=0.115
+uvicorn[standard]>=0.30
+streamlit>=1.38
+cloudinary>=1.40
+evidently>=0.4
+
+# ---- dev ----
+pytest>=8.0

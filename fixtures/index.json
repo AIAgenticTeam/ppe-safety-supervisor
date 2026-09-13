@@ -1,0 +1,272 @@
+[
+  {
+    "event_id": "evt_20260907T071200_cam_3_t17",
+    "captured_at": "2026-09-07T07:12:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "walkway",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 17,
+    "worker_ref": "W-0412",
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260907T072600_cam_3_t17",
+    "captured_at": "2026-09-07T07:26:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "violation",
+    "missing": [
+      "gloves"
+    ],
+    "indeterminate": [],
+    "track_id": 17,
+    "worker_ref": "W-0412",
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260907T080200_cam_1_t41",
+    "captured_at": "2026-09-07T08:02:00+03:00",
+    "camera_id": "cam_1",
+    "zone": "assembly_line",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 41,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260907T090300_cam_3_t22",
+    "captured_at": "2026-09-07T09:03:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "review",
+    "missing": [],
+    "indeterminate": [
+      "gloves",
+      "goggles"
+    ],
+    "track_id": 22,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260907T114100_cam_3_t23",
+    "captured_at": "2026-09-07T11:41:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "welding_bay",
+    "status": "review",
+    "missing": [],
+    "indeterminate": [
+      "helmet",
+      "goggles"
+    ],
+    "track_id": 23,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260908T081500_cam_3_t31",
+    "captured_at": "2026-09-08T08:15:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "loading_dock",
+    "status": "review",
+    "missing": [
+      "vest"
+    ],
+    "indeterminate": [],
+    "track_id": 31,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260908T094500_cam_1_t52",
+    "captured_at": "2026-09-08T09:45:00+03:00",
+    "camera_id": "cam_1",
+    "zone": "assembly_line",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 52,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260908T102000_cam_3_t61",
+    "captured_at": "2026-09-08T10:20:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "welding_bay",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 61,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260908T110500_cam_3_t72",
+    "captured_at": "2026-09-08T11:05:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "welding_bay",
+    "status": "violation",
+    "missing": [
+      "vest"
+    ],
+    "indeterminate": [],
+    "track_id": 72,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260909T073000_cam_1_t53",
+    "captured_at": "2026-09-09T07:30:00+03:00",
+    "camera_id": "cam_1",
+    "zone": "assembly_line",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 53,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260909T100800_cam_3_t17",
+    "captured_at": "2026-09-09T10:08:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "violation",
+    "missing": [
+      "gloves",
+      "goggles"
+    ],
+    "indeterminate": [],
+    "track_id": 17,
+    "worker_ref": "W-0412",
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260909T154000_cam_3_t77",
+    "captured_at": "2026-09-09T15:40:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "loading_dock",
+    "status": "violation",
+    "missing": [
+      "vest"
+    ],
+    "indeterminate": [],
+    "track_id": 77,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260910T075000_cam_3_t81",
+    "captured_at": "2026-09-10T07:50:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "violation",
+    "missing": [
+      "goggles"
+    ],
+    "indeterminate": [],
+    "track_id": 81,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260910T131100_cam_1_t55",
+    "captured_at": "2026-09-10T13:11:00+03:00",
+    "camera_id": "cam_1",
+    "zone": "assembly_line",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 55,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260910T162200_cam_3_t84",
+    "captured_at": "2026-09-10T16:22:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "walkway",
+    "status": "violation",
+    "missing": [
+      "helmet"
+    ],
+    "indeterminate": [],
+    "track_id": 84,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260911T085500_cam_1_t58",
+    "captured_at": "2026-09-11T08:55:00+03:00",
+    "camera_id": "cam_1",
+    "zone": "assembly_line",
+    "status": "compliant",
+    "missing": [],
+    "indeterminate": [],
+    "track_id": 58,
+    "worker_ref": null,
+    "actionable": false
+  },
+  {
+    "event_id": "evt_20260911T120900_cam_3_t88",
+    "captured_at": "2026-09-11T12:09:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "violation",
+    "missing": [
+      "gloves"
+    ],
+    "indeterminate": [],
+    "track_id": 88,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260911T143200_cam_3_t17",
+    "captured_at": "2026-09-11T14:32:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "grinding_station",
+    "status": "violation",
+    "missing": [
+      "gloves",
+      "goggles"
+    ],
+    "indeterminate": [],
+    "track_id": 17,
+    "worker_ref": "W-0412",
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260912T093700_cam_3_t91",
+    "captured_at": "2026-09-12T09:37:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "loading_dock",
+    "status": "violation",
+    "missing": [
+      "boots"
+    ],
+    "indeterminate": [],
+    "track_id": 91,
+    "worker_ref": null,
+    "actionable": true
+  },
+  {
+    "event_id": "evt_20260912T140300_cam_3_t93",
+    "captured_at": "2026-09-12T14:03:00+03:00",
+    "camera_id": "cam_3",
+    "zone": "welding_bay",
+    "status": "violation",
+    "missing": [
+      "goggles"
+    ],
+    "indeterminate": [],
+    "track_id": 93,
+    "worker_ref": null,
+    "actionable": true
+  }
+]

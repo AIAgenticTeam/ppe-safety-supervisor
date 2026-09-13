@@ -1,0 +1,60 @@
+{
+  "event_id": "evt_20260910T162200_cam_3_t84",
+  "captured_at": "2026-09-10T16:22:00+03:00",
+  "camera_id": "cam_3",
+  "zone": {
+    "name": "walkway",
+    "label": "Bay 3 - walkway",
+    "required_ppe": [
+      "helmet"
+    ],
+    "severity_multiplier": 1.0
+  },
+  "subject": {
+    "track_id": 84,
+    "bbox": [
+      540,
+      280,
+      720,
+      700
+    ],
+    "detection_confidence": 0.91,
+    "height_px": 420,
+    "worker_ref": null
+  },
+  "ppe": {
+    "present": {},
+    "missing": [
+      "helmet"
+    ],
+    "indeterminate": []
+  },
+  "status": "violation",
+  "confirmation": {
+    "frames_observed": 10,
+    "frames_missing": 9,
+    "window_seconds": 2.0,
+    "rule": "8_of_10",
+    "confirmed": true
+  },
+  "evidence": {
+    "crop_url": null,
+    "frame_url": null,
+    "crop_path": "fixtures/crops/evt_20260910T162200_cam_3_t84.jpg",
+    "frame_path": "fixtures/frames/cam_3_20260910T162200.jpg"
+  },
+  "detector": {
+    "weights": "ppe-presence-s960-3/weights/best.pt",
+    "imgsz": 960,
+    "recall": {
+      "helmet": 0.796,
+      "vest": 0.816,
+      "boots": 0.742,
+      "goggles": 0.723,
+      "gloves": 0.733,
+      "Person": 0.867
+    }
+  },
+  "reasons": [],
+  "schema_version": "1.0"
+}
