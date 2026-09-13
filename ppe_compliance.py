@@ -23,8 +23,14 @@ import json
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from ultralytics import YOLO
+# ultralytics/torch are imported lazily inside assess_image() on purpose: the
+# association and policy logic below is pure geometry, and lanes C and D need to
+# import it without installing a 2 GB deep-learning stack.
+
+if TYPE_CHECKING:
+    from zones import Zone, ZoneMap
 
 PERSON_CLASS = "Person"
 
@@ -54,8 +60,13 @@ NEEDS_VISIBLE: dict[str, str] = {
 class Policy:
     """Site rules and the confidence gates that keep this honest.
 
-    `required` defaults to helmet + vest deliberately. Those are the two classes
-    the detector actually performs on (mAP50 0.860 / 0.854) and the two most
+    `required` is only the FALLBACK. When a ZoneMap is supplied, each person's
+    required PPE comes from the zone they are standing in -- that is what makes
+    "no gloves in the walkway" and "no gloves at the grinder" different events.
+    This field applies only when no zone map is given.
+
+    It defaults to helmet + vest deliberately: those are the two classes the
+    detector actually performs on (mAP50 0.860 / 0.854) and the two most
     universally mandated. gloves / goggles / boots measure 0.775-0.795 and are
     far more site-specific -- enforce them only where the site genuinely
     requires it, and expect more review-status output when you do.
@@ -83,6 +94,8 @@ class PersonAssessment:
     indeterminate: list[str] = field(default_factory=list)
     status: str = "compliant"                                  # compliant|violation|review
     reasons: list[str] = field(default_factory=list)
+    zone: "Zone | None" = None            # where they were standing; None if no zone map
+    required_ppe: tuple[str, ...] = ()    # what that position actually demanded
 
 
 @dataclass
@@ -142,8 +155,16 @@ def assess_detections(
     img_w: int,
     img_h: int,
     policy: Policy,
+    zone_map: "ZoneMap | None" = None,
+    camera_id: str | None = None,
 ) -> tuple[list[PersonAssessment], list[dict]]:
-    """Associate PPE detections with people and apply the policy."""
+    """Associate PPE detections with people and apply the policy.
+
+    When `zone_map` and `camera_id` are given, each person's required PPE comes
+    from the zone under their feet. Without them, `policy.required` applies to
+    everyone -- useful for tests and single-zone sites, but it cannot express
+    the walkway/grinder distinction.
+    """
     people, items = [], []
     for b in boxes:
         cls = names[int(b.cls)]
@@ -185,6 +206,13 @@ def assess_detections(
         height = py2 - py1
         visible = _visible_zones(a.bbox, img_w, img_h, policy.edge_margin_px)
 
+        # Where is this person standing, and what does that position demand?
+        if zone_map is not None and camera_id is not None:
+            a.zone = zone_map.zone_or_default(camera_id, a.bbox)
+            a.required_ppe = tuple(a.zone.required_ppe)
+        else:
+            a.required_ppe = tuple(policy.required)
+
         too_small = height < policy.min_person_height_px
         if too_small:
             a.reasons.append(
@@ -192,7 +220,7 @@ def assess_detections(
                 f"threshold for reliable PPE detection"
             )
 
-        for item in policy.required:
+        for item in a.required_ppe:
             if item in a.present:
                 continue
             if NEEDS_VISIBLE.get(item, "middle") not in visible:
@@ -221,8 +249,11 @@ def assess_detections(
 
 
 def assess_image(image_path: str | Path, weights: str | Path, policy: Policy | None = None,
-                 imgsz: int | None = None) -> FrameReport:
+                 imgsz: int | None = None, zone_map: "ZoneMap | None" = None,
+                 camera_id: str | None = None) -> FrameReport:
     """Run the detector on one image and return a structured compliance report."""
+    from ultralytics import YOLO
+
     policy = policy or Policy()
     model = YOLO(str(weights))
 
@@ -232,7 +263,8 @@ def assess_image(image_path: str | Path, weights: str | Path, policy: Policy | N
     result = model.predict(str(image_path), **kwargs)[0]
 
     img_h, img_w = result.orig_shape
-    persons, unassigned = assess_detections(result.boxes, model.names, img_w, img_h, policy)
+    persons, unassigned = assess_detections(result.boxes, model.names, img_w, img_h,
+                                            policy, zone_map, camera_id)
 
     return FrameReport(
         source=str(image_path),
@@ -269,17 +301,32 @@ def save_evidence(image_path: str | Path, person: PersonAssessment, out_dir: str
 if __name__ == "__main__":
     import argparse
 
-    ap = argparse.ArgumentParser(description="PPE compliance assessment for one image")
+    ap = argparse.ArgumentParser(
+        description="PPE compliance assessment for one image. "
+                    "Pass --zones/--camera to resolve required PPE per zone; "
+                    "otherwise --required applies to everyone in frame.")
     ap.add_argument("image")
-    ap.add_argument("--weights", default="/workspace/runs/ppe-presence-s960-3/weights/best.pt")
-    ap.add_argument("--required", default="helmet,vest")
-    ap.add_argument("--zone", default="general site")
-    ap.add_argument("--evidence-dir", default="/workspace/evidence")
+    ap.add_argument("--weights", default="runs/ppe-presence-s960-3/weights/best.pt")
+    ap.add_argument("--zones", help="zones.json -- enables per-zone requirements")
+    ap.add_argument("--camera", help="camera id within the zone config, e.g. cam_3")
+    ap.add_argument("--required", default="helmet,vest",
+                    help="fallback requirement when no zone config is given")
+    ap.add_argument("--evidence-dir", default="evidence")
     args = ap.parse_args()
 
-    pol = Policy(required=tuple(args.required.split(",")), zone_label=args.zone)
-    rep = assess_image(args.image, args.weights, pol)
+    zmap = None
+    if args.zones:
+        from zones import ZoneMap
+        if not args.camera:
+            ap.error("--zones requires --camera")
+        zmap = ZoneMap.load(args.zones)
+
+    pol = Policy(required=tuple(args.required.split(",")))
+    rep = assess_image(args.image, args.weights, pol,
+                       zone_map=zmap, camera_id=args.camera)
 
     print(rep.to_json())
     for p in rep.violations + rep.needs_review:
-        print(f"person {p.person_id}: {p.status} -> evidence {save_evidence(args.image, p, args.evidence_dir)}")
+        where = p.zone.label if p.zone else "no zone config"
+        print(f"person {p.person_id}: {p.status} in {where} "
+              f"-> evidence {save_evidence(args.image, p, args.evidence_dir)}")

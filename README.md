@@ -56,14 +56,31 @@ cd ppe-safety-supervisor
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-python zones.py zones.json          # validate the zone config
+python zones.py zones.json               # validate the zone config
 python make_fixtures.py --out fixtures   # regenerate 20 sample events
-python -m pytest tests -q           # run the contract tests
+python -m pytest tests -q                # 63 contract + integration tests
 ```
 
 **You do not need a GPU or the trained model to work on the agent layer.** `fixtures/`
 contains 20 realistic events covering every branch — compliant, violation, review,
 indeterminate, and a repeat offender across a week. Build against those.
+
+The deterministic core (`zones.py`, `events.py`, `ppe_compliance.py`) imports without
+torch or ultralytics — those load lazily only when a model is actually run.
+
+With weights and footage, the live path produces the same JSON shape:
+
+```bash
+python pipeline.py frame.jpg  --camera cam_3 --weights runs/.../best.pt
+python pipeline.py footage/   --camera cam_3 --out events/
+```
+
+Draw the zones over a real frame and have someone who knows the floor check them
+before trusting any event:
+
+```bash
+python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
+```
 
 ---
 
@@ -71,6 +88,7 @@ indeterminate, and a repeat offender across a week. Build against those.
 
 | path | what it is | lane |
 | --- | --- | --- |
+| `pipeline.py` | **frame → detections → zone-aware assessment → event** | A |
 | `zones.py` | Camera zones, point-in-polygon, foot-point location | A |
 | `ppe_compliance.py` | Detections → per-person compliance assessment | A |
 | `events.py` | **The frozen `ViolationEvent` contract** + JSON Schema | A |
