@@ -83,7 +83,7 @@ def main() -> None:
     ap.add_argument("source", help="image file or a directory of frames")
     ap.add_argument("--camera", required=True, help="camera id in the zone config")
     ap.add_argument("--zones", default="zones.json")
-    ap.add_argument("--weights", default="runs/ppe-presence-s960-3/weights/best.pt")
+    ap.add_argument("--weights", default="weights/best.pt")
     ap.add_argument("--out", default="events")
     ap.add_argument("--imgsz", type=int, default=None,
                     help="omit to inherit the checkpoint's training resolution")

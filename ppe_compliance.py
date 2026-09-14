@@ -13,7 +13,7 @@ anything the geometry cannot assess is marked indeterminate rather than guessed.
 
 Usage:
     from ppe_compliance import Policy, assess_image
-    report = assess_image("frame.jpg", "/workspace/runs/.../best.pt", Policy())
+    report = assess_image("frame.jpg", "weights/best.pt", Policy())
     print(report.to_json())
 """
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
                     "Pass --zones/--camera to resolve required PPE per zone; "
                     "otherwise --required applies to everyone in frame.")
     ap.add_argument("image")
-    ap.add_argument("--weights", default="runs/ppe-presence-s960-3/weights/best.pt")
+    ap.add_argument("--weights", default="weights/best.pt")
     ap.add_argument("--zones", help="zones.json -- enables per-zone requirements")
     ap.add_argument("--camera", help="camera id within the zone config, e.g. cam_3")
     ap.add_argument("--required", default="helmet,vest",
