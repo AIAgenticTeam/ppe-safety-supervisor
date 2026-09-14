@@ -166,11 +166,3 @@ Stated here because they belong in the final report too.
 
 ---
 
-## Licensing — decision required
-
-This project depends on **Ultralytics YOLO (AGPL-3.0)** and the **construction-PPE dataset
-(AGPL-3.0)**. AGPL-3.0 is a strong copyleft licence: distributing this work, or running it as
-a network service, can oblige you to release the whole project under AGPL-3.0 as well.
-
-**Do not make this repository public until the team has decided how to license it.**
-See [docs/LICENSING.md](docs/LICENSING.md).
