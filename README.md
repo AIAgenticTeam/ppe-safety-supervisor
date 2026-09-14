@@ -96,9 +96,18 @@ python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 | `zones.json` | Zone polygons and per-zone PPE requirements | A |
 | `restratify.py` | Re-splits a YOLO dataset so every class is in every split | A |
 | `notebooks/` | YOLO26 training and evaluation runbook | A |
+| `kb/` | OSHA ingest, chunking, FAISS index, clause map, Ragas | B |
+| `agents/` | LangGraph graph, tools, guardrails, memory, severity | C |
+| `app/` | FastAPI, Streamlit console, SQLite, telemetry | D |
+| `eval/` | Severity labels and the end-to-end evaluation run | shared |
 | `fixtures/` | 20 generated events + index | shared |
+| `weights/` | Model weights — fetched from a release, not in git | A |
+| `scripts/` | `get_weights.py` and other one-off utilities | shared |
 | `docs/` | Event schema, workflow, licensing notes | shared |
 | `tests/` | Contract and geometry tests | shared |
+
+`kb/`, `agents/`, `app/` and `eval/` are empty placeholders — one per lane, so two
+people never edit the same file. Root modules stay flat because they import each other.
 
 ---
 
