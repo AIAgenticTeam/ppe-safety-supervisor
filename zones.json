@@ -2,7 +2,7 @@
   "_comment": "Zone polygons are in image coordinates for each camera's native frame size. Draw them over a real frame with `python zones.py zones.json --overlay frame.jpg cam_3 out.jpg` and have someone who knows the floor check them before trusting any event.",
   "cameras": {
     "cam_3": {
-      "label": "Bay 3 - fabrication",
+      "label": "EXAMPLE (not a real camera) - Bay 3 - fabrication",
       "frame_size": [
         1280,
         720
@@ -129,7 +129,7 @@
       ]
     },
     "cam_1": {
-      "label": "Bay 1 - assembly",
+      "label": "EXAMPLE (not a real camera) - Bay 1 - assembly",
       "frame_size": [
         1280,
         720
@@ -324,5 +324,6 @@
         }
       ]
     }
-  }
+  },
+  "_cameras_note": "d_view02 is the only camera derived from real footage. cam_1 and cam_3 are examples underpinning the fixtures and tests. d_view02_test duplicates d_view02 with goggles added purely so the confirmed-violation path can be exercised on footage where nobody is in breach -- it is not a site policy and must not be used for findings."
 }
