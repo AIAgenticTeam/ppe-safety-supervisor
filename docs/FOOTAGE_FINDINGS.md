@@ -69,3 +69,42 @@ negative. The single `boots 0.25` is a false positive on a knee, correctly rejec
 
 The red-vest miss is good material for the report either way: concrete, measured evidence
 of domain gap, caught before deployment rather than after.
+
+## clip_c_aerial_30fps.mp4 — aerial excavation site, 1280×720, 30 fps, 15.9 s
+
+Drone/overhead shot. Excavator plus ~6 workers. Longest clip, ground visible, people move —
+structurally the best of the three. Detection is the worst.
+
+| class | boxes | mean conf | min | max |
+| --- | --- | --- | --- | --- |
+| Person | 9 | 0.470 | 0.349 | 0.679 |
+| helmet | 3 | 0.303 | 0.300 | 0.307 |
+| vest | 2 | 0.405 | 0.369 | 0.442 |
+| boots | 1 | 0.408 | — | — |
+
+**6 of 12 frames detected nothing at all.** Peak 2 people found in frames containing 6.
+
+Worse than the numbers: the detections are wrong, not merely weak. In `frame_02`, `Person
+0.42` is a blue tarpaulin, and `Person 0.62` + `vest 0.37` is a red-and-blue tarpaulin —
+while all six real workers go undetected. The model appears to key on bright coloured
+fabric for `vest`, firing on a tarp here and failing on an actual red vest in clip_a.
+
+False positives on inanimate objects are the most dangerous failure direction for a
+compliance system.
+
+## Conclusion across all three clips
+
+| clip | failure |
+| --- | --- |
+| a — construction, ground level | people and helmets fine, **vest never detected** → would falsely accuse a compliant worker |
+| b — indoor workshop | people found but max 0.68, **under the 0.70 violation gate** → nothing actionable |
+| c — aerial site | **half the frames empty**, real workers missed, **false positives on tarpaulins** |
+
+Three independent clips, three severe and distinct failures. This is not clip-specific bad
+luck: **the detector does not generalise outside its training distribution** (ground-level
+construction stills, upright workers, close to camera). Buying a fourth stock clip is a
+lottery ticket.
+
+**Direction:** demo detection on the construction-PPE test set, where the model measurably
+scores 0.817 mAP50; film one short ground-level clip in-house for the tracking and zone
+demo; keep `fixtures/` driving the agent layer. Revisit fine-tuning if time allows.
