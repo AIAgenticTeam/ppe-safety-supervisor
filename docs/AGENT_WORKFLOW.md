@@ -1,7 +1,10 @@
 # Agent workflow
 
 Three agents, one LangGraph state machine. Lane C owns the graph; Lane D owns the
-database and the console it writes to.
+database, the roster and the console.
+
+Scoring and identity rules are decided in
+[SEVERITY_AND_IDENTITY.md](SEVERITY_AND_IDENTITY.md); this document is the graph.
 
 ```
                     Lane A · pipeline.py
@@ -22,8 +25,9 @@ database and the console it writes to.
                              │  tools                              │
                              │    lookup_clause(class, zone)       │ ← deterministic
                              │    retrieve_clause_text(clause_id)  │ ← RAG / FAISS
+                             │    score_baseline(zone, missing)    │ ← deterministic
                              │                                     │
-                             │  emits  Draft                       │
+                             │  emits  Draft + baseline severity   │
                              └──────────────┬──────────────────────┘
                                             │
                              ┌──────────────▼──────────────┐
@@ -31,38 +35,51 @@ database and the console it writes to.
                              └──────────────┬──────────────┘  never proceed
                                             │
                              ┌──────────────▼──────────────────────┐
+                             │  SUPERVISOR · IDENTIFY              │
+                             │  dashboard prompt, urgency set by   │
+                             │  baseline severity                  │
+                             │                                     │
+                             │  picks the worker from the roster   │
+                             │  (dropdown, never free text)        │
+                             │                                     │
+                             │  cannot identify → park as          │
+                             │  blocked_on = worker_identity       │
+                             └──────────────┬──────────────────────┘
+                                            │
+                             ┌──────────────▼──────────────────────┐
                              │  AGENT 2 · ADJUDICATOR              │
-                             │  Given history, what should happen  │
+                             │  Given history, what is proportionate│
                              │                                     │
                              │  tools                              │
-                             │    get_worker_history(worker_ref)   │
-                             │    score_severity(rubric)           │
-                             │    draft_warning(...)               │
-                             │    draft_escalation(...)            │
+                             │    get_worker_history(worker_id)    │
+                             │    final_severity(baseline, priors) │ ← deterministic
+                             │    assess_confidence(event)         │ ← deterministic
+                             │    draft_notice(...)                │
                              │                                     │
                              │  emits  Decision                    │
                              └──────────────┬──────────────────────┘
                                             │
-                        ┌───────────────────┼───────────────────┐
-                        ▼                   ▼                   ▼
-                   NO_ACTION            WARNING            ESCALATION
-                   log only          draft email        draft letter
-                        │                   │                   │
-                        │                   │        ┌──────────▼──────────┐
-                        │                   │        │ GUARDRAIL           │
-                        │                   │        │ HUMAN APPROVAL      │
-                        │                   │        │ blocks until signed │
-                        │                   │        └──────────┬──────────┘
-                        └───────────────────┴──────────────────┘
+              ┌──────────────┬──────────────┼──────────────┬──────────────┐
+              ▼              ▼              ▼              ▼              ▼
+          COMPLIANT      LOG_ONLY        WARNING      ESCALATION     STOP_WORK
+             0            1–2             3–4            5–7            8+
+              │              │              │              │              │
+              │              │       draft email    draft letter   draft letter
+              │              │              │              │              │
+              │              │       ┌──────▼──────────────▼──────────────▼──────┐
+              │              │       │ GUARDRAIL  SUPERVISOR APPROVES AND SENDS  │
+              │              │       │ the system never sends anything itself    │
+              │              │       └──────────────────┬────────────────────────┘
+              └──────────────┴──────────────────────────┘
                                             │
                              ┌──────────────▼──────────────────────┐
                              │  AGENT 3 · RECORDER                 │
-                             │  Who was this, and what is on file  │
+                             │  What goes on file                  │
                              │                                     │
                              │  tools                              │
-                             │    resolve_worker(candidate)        │ ← judgement
                              │    commit_record(payload)           │ ← deterministic
                              │    verify_record(record_id)         │ ← read-back
+                             │    attach_identity(event, worker)   │ ← update, later
                              │                                     │
                              │  emits  CommittedRecord             │
                              └──────────────┬──────────────────────┘
@@ -75,8 +92,8 @@ database and the console it writes to.
                                    (history for Agent 2)
 ```
 
-Nothing is ever emailed or sent by the system. Agents 2 and 3 produce **drafts and
-records**; a human in the console decides what leaves the building.
+**The system never sends anything.** Agents produce drafts and records; a supervisor
+decides what leaves the building.
 
 ---
 
@@ -84,16 +101,52 @@ records**; a human in the console decides what leaves the building.
 
 Agent 3 writes the history that Agent 2 reads on the *next* event. That is the memory
 loop, and it is also the single point of failure: **if Agent 3 fails to record, Agent 2
-sees a first offence where there was a third.** The system silently under-escalates, and
+sees a first offence where there was a third.** The system silently under-escalates and
 nothing in the output looks wrong.
 
 Two consequences for the build:
 
-1. `commit_record` is a plain SQL write, not a judgement. It must not be left to a model
-   to remember to call it — the graph verifies the write with a read-back and refuses to
-   close the run otherwise.
-2. The failure has to be visible. A `pending_write` state that never resolves should
-   surface in the console, not disappear.
+1. `commit_record` is a plain SQL write, not a judgement. It is not left to a model to
+   remember — the graph verifies it by read-back and refuses to close the run otherwise.
+2. The failure must be visible. A `pending_write` that never resolves surfaces in the
+   console rather than disappearing.
+
+---
+
+## Identity comes before the action, not after
+
+"Repeat" is a conclusion, not an input. The agent cannot route down the repeat branch
+before it knows who the person is — that is the very thing the history lookup determines.
+
+So the order is fixed:
+
+```
+1. baseline severity      zone weights only, no history needed
+2. supervisor identifies  urgency of the prompt set by the baseline
+3. history lookup         by worker_id
+4. final severity         baseline + 2 per prior in the last 7 days
+5. route to an action
+```
+
+Agent 3 records every event immediately with `worker_id = NULL`. Identity arrives later
+as an update, which means **unattributed events count toward nobody's history** — you
+cannot escalate against someone on the basis of incidents nobody confirmed were them.
+
+---
+
+## Two axes, not one number
+
+| axis | from | answers |
+| --- | --- | --- |
+| **severity** | zone item weights + priors | how bad is this if true |
+| **confidence** | detector recall, frames confirmed, person confidence | how sure are we |
+
+Detector recall is deliberately **not** folded into severity. A missing helmet is equally
+dangerous whether the detector is 79% or 99% reliable; treating it otherwise would mean
+"we are less sure, therefore it is less serious".
+
+The action needs both. **High severity with low confidence is urgent human review**, not
+a downgraded escalation.
 
 ---
 
@@ -107,71 +160,47 @@ CaseState:
     draft:      Draft | None        # agent 1
     decision:   Decision | None     # agent 2
     record:     CommittedRecord | None   # agent 3
-    trace:      list[Step]          # every tool call, for observability (week 6)
+    trace:      list[Step]          # every tool call, for week-6 observability
     blocked_on: str | None          # "human_approval" | "worker_identity" | None
 ```
 
-Agents append. Nothing overwrites `event` — the finding is evidence and stays immutable.
+Agents append. Nothing overwrites `event` — the finding is evidence and evidence does not
+change after the fact.
 
 ---
 
-## Three corrections to the original description
+## Two rules that are easy to get wrong
 
-### 1. RAG must not choose the citation
+### RAG must not choose the citation
 
-The description says Agent 1 "uses RAG to get the OSHA citation that is similar to the
-violation." Do not do that. Cosine similarity choosing which law a worker allegedly broke
-produces a confident, real-looking, wrong citation — worse than none, and precisely the
-failure the citation guardrail exists to catch.
+Cosine similarity picking which law a worker allegedly broke yields a confident,
+real-looking, wrong citation — worse than none, and exactly what the citation guardrail
+exists to catch.
 
 The violation space is small and enumerable: 6 PPE classes × N zones. `kb/clauses.yaml`
 maps it deterministically. RAG then retrieves the **text** of the clause you already know
 applies.
 
 ```
-missing "helmet" in any zone  →  1926.100  (deterministic lookup)
+missing "helmet" in any zone  →  1926.100   (deterministic lookup)
                               →  FAISS retrieves the text of 1926.100
 ```
 
 This also gives Lane B its citation-accuracy ground truth for free.
 
-### 2. OSHA does not penalise workers
+### OSHA does not penalise workers
 
-The description has Agent 1 assigning "the correct penalty according to the OSHA."
-OSHA penalties are **federal monetary fines assessed against the employer**, following an
-inspection. OSHA does not fine individual workers, and this system is not an OSHA
-inspector.
-
-A system that tells a worker "your OSHA penalty is $X" is stating something false about a
-named person's legal liability. Replace it with:
+OSHA penalties are **federal fines assessed against the employer** after an inspection.
+OSHA has no mechanism to fine an individual worker, and this system is not an inspector.
 
 | field | source |
 | --- | --- |
 | `clause` | 29 CFR 1926 — what rule was breached |
 | `severity` | the scored rubric — how serious, given zone and history |
-| `action` | **site disciplinary policy** — verbal warning, written warning, stop-work |
+| `action` | **site disciplinary policy** — warning, escalation, stop-work |
 
 Cite the regulation for *what the rule is*; cite site policy for *what happens next*. Say
-which is which. That distinction is defensible in front of a panel; conflating them is not.
-
-### 3. Worker identity does not come from the vision system
-
-Both Agent 2 and Agent 3 depend on a worker id, and **Lane A cannot supply one**.
-ByteTrack ids do not survive a session, a camera hand-off, or someone walking out of
-frame. `subject.worker_ref` is `null` in every event the pipeline produces today.
-
-So the identity has to enter from somewhere else. In order of preference:
-
-1. **A supervisor binds it in the console** when approving — the human-in-the-loop step
-   does double duty, and identification stays a human act
-2. **A badge or roster integration** — out of scope for two weeks
-3. **Fall back to zone-level history** — "the walkway generated five violations this
-   week" needs no identity at all, and is arguably the more useful insight
-
-Until one exists, Agent 2's history lookup returns empty and every event looks like a
-first offence. `resolve_worker` in Agent 3 is the node where this gets handled: it either
-matches a supervisor-supplied id, or marks the case `blocked_on="worker_identity"` and
-routes it to the console rather than inventing an identity.
+which is which.
 
 ---
 
@@ -185,10 +214,10 @@ Each agent has a different **job, input and failure mode**:
 | --- | --- | --- |
 | Assessor | what rule applies | citing the wrong clause |
 | Adjudicator | what response is proportionate | over- or under-escalating |
-| Recorder | who this was, and what goes on file | losing history, breaking future escalation |
+| Recorder | what goes on file | losing history, breaking future escalation |
 
-They also run on different **trust levels**. The Assessor works from one immutable event.
-The Adjudicator reads history and can recommend action against a named person. The
-Recorder mutates shared state. Splitting them means the guardrails sit on the edges
-between, where they can actually block — a single agent with five tools has no seam to
-put a human approval gate into.
+They also run at different **trust levels**. The Assessor works from one immutable event.
+The Adjudicator reads history and recommends action against a named person. The Recorder
+mutates shared state. Splitting them puts the guardrails on the edges *between* agents,
+where they can actually block — a single agent with five tools has no seam to put a human
+approval gate into.
