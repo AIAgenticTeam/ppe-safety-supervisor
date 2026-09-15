@@ -37,7 +37,7 @@ cannot do, and they are why this system needs agents rather than `if` statements
 03  AGENT LAYER          Compliance Agent (per event, seconds)
     (LangGraph)          Weekly Analyst Agent (scheduled, weekly)
                               ↓  guardrail: stop-work needs a human
-04  STATE & INTERFACE    SQLite · Cloudinary · FastAPI · Streamlit
+04  STATE & INTERFACE    SQLite · local evidence store · FastAPI · Streamlit
 ```
 
 The boundary between **02** and **03** is the important one. Everything above it is
@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 python zones.py zones.json               # validate the zone config
 python make_fixtures.py --out fixtures   # regenerate 20 sample events
-python -m pytest tests -q                # 63 contract + integration tests
+python -m pytest tests -q                # 94 contract, integration and tracking tests
 ```
 
 **You do not need a GPU or the trained model to work on the agent layer.** `fixtures/`
@@ -71,9 +71,14 @@ torch or ultralytics — those load lazily only when a model is actually run.
 With weights and footage, the live path produces the same JSON shape:
 
 ```bash
-python pipeline.py frame.jpg  --camera cam_3 --weights runs/.../best.pt
-python pipeline.py footage/   --camera cam_3 --out events/
+python pipeline.py clip.mp4   --camera cam_3 --out events/   # tracked, confirmed
+python pipeline.py frame.jpg  --camera cam_3                 # one still
+python pipeline.py footage/   --camera cam_3                 # a folder of stills
 ```
+
+Video runs ByteTrack with N-of-M temporal confirmation, so only sustained absences are
+emitted and those events are actionable. Stills have no temporal dimension, so nothing
+from them is ever actionable — by design, not omission.
 
 Draw the zones over a real frame and have someone who knows the floor check them
 before trusting any event:
@@ -92,6 +97,8 @@ python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 | `zones.py` | Camera zones, point-in-polygon, foot-point location | A |
 | `ppe_compliance.py` | Detections → per-person compliance assessment | A |
 | `events.py` | **The frozen `ViolationEvent` contract** + JSON Schema | A |
+| `tracking.py` | **ByteTrack + N-of-M temporal confirmation** | A |
+| `evidence.py` | Local evidence store — annotated frame + crop per finding | A |
 | `make_fixtures.py` | Generates sample events with no GPU required | A |
 | `zones.json` | Zone polygons and per-zone PPE requirements | A |
 | `restratify.py` | Re-splits a YOLO dataset so every class is in every split | A |
@@ -146,7 +153,7 @@ Four parallel lanes. See [docs/WORKFLOW.md](docs/WORKFLOW.md) for the branch and
 
 | lane | owns |
 | --- | --- |
-| **A · Perception** | zones, tracking, event emission, evidence crops |
+| **A · Perception** | zones, tracking, event emission, evidence store |
 | **B · Knowledge** | OSHA ingest, chunking, FAISS index, clause map, Ragas |
 | **C · Agents** | LangGraph graph, tools, guardrails, memory, severity policy |
 | **D · App & docs** | FastAPI, Streamlit console, logging, report, demo script |
@@ -167,9 +174,11 @@ Stated here because they belong in the final report too.
 - **Domain gap.** The detector is trained on the Ultralytics construction-PPE dataset
   (1,416 images). Performance on other camera angles, lighting, and mounting heights will be
   lower. Published benchmarks show a 4–7 point AP50 drop across sources.
-- **No dedicated hi-vis regulation in general industry.** OSHA 1910 Subpart I has no vest
-  clause; 1926.201 covers flaggers only. Vest findings cite site policy supported by
-  1910.132(a) hazard assessment, and say so rather than inventing a clause.
+- **No dedicated hi-vis or hand-protection clause in construction.** Scope is 29 CFR 1926
+  (see [docs/REGULATION_SCOPE.md](docs/REGULATION_SCOPE.md)); 1926.201 covers flaggers only,
+  and there is no equivalent of general industry's 1910.138. Vest and glove findings cite
+  site policy supported by 1926.95's hazard-assessment duty, and say so rather than
+  inventing a clause.
 - **Small-object localisation is capped by label quality.** mAP50-95 sat at ~0.435 across
   four different training configurations, unmoved by resolution or capacity.
 

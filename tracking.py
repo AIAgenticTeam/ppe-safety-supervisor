@@ -191,9 +191,12 @@ def track_video(video_path, weights, zone_map, camera_id: str, policy,
                 n: int = DEFAULT_N, m: int = DEFAULT_M, stride: int = 1,
                 imgsz: int | None = None, tracker: str = "bytetrack.yaml",
                 verbose: bool = True):
-    """Run ByteTrack over a video and yield (Confirmation, assessment, frame_index).
+    """Run ByteTrack over a video and yield (Confirmation, assessment, frame_index, frame).
 
-    Yields only confirmed findings -- the caller turns them into ViolationEvents.
+    `frame` is the BGR image the confirmation fired on -- video frames are transient, so
+    the caller must capture evidence at this moment or lose it.
+
+    Yields only confirmed findings; the caller turns them into ViolationEvents.
     """
     import cv2
     from ultralytics import YOLO
@@ -250,7 +253,7 @@ def track_video(video_path, weights, zone_map, camera_id: str, policy,
                           f"CONFIRMED missing {'+'.join(confirmation.items)}  "
                           f"({confirmation.frames_missing}/{confirmation.frames_observed} "
                           f"frames, {confirmation.window_seconds}s)")
-                yield confirmation, person, frame_index
+                yield confirmation, person, frame_index, result.orig_img
 
 
 def _nearest_id(bbox, boxes, ids, tolerance: int = 4):

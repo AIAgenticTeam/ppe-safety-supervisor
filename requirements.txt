@@ -20,7 +20,7 @@ python-dotenv>=1.0
 fastapi>=0.115
 uvicorn[standard]>=0.30
 streamlit>=1.38
-cloudinary>=1.40
+# cloudinary -- dropped: evidence is stored locally (see evidence.py)
 evidently>=0.4
 
 # ---- dev ----
