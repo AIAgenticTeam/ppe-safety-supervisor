@@ -59,3 +59,7 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# pipeline output
+events/
+data/footage/scenes/

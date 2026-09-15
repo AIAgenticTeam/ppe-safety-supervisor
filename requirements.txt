@@ -1,5 +1,6 @@
 # ---- perception (lane A) ----
 ultralytics>=8.4.148
+lap>=0.5.12          # ByteTrack association; ultralytics auto-installs it otherwise
 opencv-python>=4.10
 pillow>=10.0
 pyyaml>=6.0

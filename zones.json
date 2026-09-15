@@ -3,38 +3,126 @@
   "cameras": {
     "cam_3": {
       "label": "Bay 3 - fabrication",
-      "frame_size": [1280, 720],
-      "default_ppe": ["helmet"],
+      "frame_size": [
+        1280,
+        720
+      ],
+      "default_ppe": [
+        "helmet"
+      ],
       "zones": [
         {
           "name": "walkway",
           "label": "Bay 3 - walkway",
-          "polygon": [[0, 300], [360, 280], [400, 720], [0, 720]],
-          "required_ppe": ["helmet"],
+          "polygon": [
+            [
+              0,
+              300
+            ],
+            [
+              360,
+              280
+            ],
+            [
+              400,
+              720
+            ],
+            [
+              0,
+              720
+            ]
+          ],
+          "required_ppe": [
+            "helmet"
+          ],
           "severity_multiplier": 1.0,
           "notes": "Transit only. Hand and eye protection not required while passing through."
         },
         {
           "name": "grinding_station",
           "label": "Bay 3 - grinding station",
-          "polygon": [[400, 280], [760, 265], [790, 720], [420, 720]],
-          "required_ppe": ["helmet", "gloves", "goggles"],
+          "polygon": [
+            [
+              400,
+              280
+            ],
+            [
+              760,
+              265
+            ],
+            [
+              790,
+              720
+            ],
+            [
+              420,
+              720
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "gloves",
+            "goggles"
+          ],
           "severity_multiplier": 2.0,
           "notes": "Abrasive wheel in operation. Eye and hand protection mandatory."
         },
         {
           "name": "welding_bay",
           "label": "Bay 3 - welding bay",
-          "polygon": [[790, 260], [1280, 250], [1280, 560], [800, 565]],
-          "required_ppe": ["helmet", "gloves", "goggles", "vest"],
+          "polygon": [
+            [
+              790,
+              260
+            ],
+            [
+              1280,
+              250
+            ],
+            [
+              1280,
+              560
+            ],
+            [
+              800,
+              565
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "gloves",
+            "goggles",
+            "vest"
+          ],
           "severity_multiplier": 2.5,
           "notes": "Hot work area. Highest severity zone on this camera."
         },
         {
           "name": "loading_dock",
           "label": "Bay 3 - loading dock",
-          "polygon": [[800, 585], [1280, 580], [1280, 720], [810, 720]],
-          "required_ppe": ["helmet", "vest", "boots"],
+          "polygon": [
+            [
+              800,
+              585
+            ],
+            [
+              1280,
+              580
+            ],
+            [
+              1280,
+              720
+            ],
+            [
+              810,
+              720
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "vest",
+            "boots"
+          ],
           "severity_multiplier": 1.5,
           "notes": "Vehicle movement. High-visibility clothing required."
         }
@@ -42,16 +130,197 @@
     },
     "cam_1": {
       "label": "Bay 1 - assembly",
-      "frame_size": [1280, 720],
-      "default_ppe": ["helmet"],
+      "frame_size": [
+        1280,
+        720
+      ],
+      "default_ppe": [
+        "helmet"
+      ],
       "zones": [
         {
           "name": "assembly_line",
           "label": "Bay 1 - assembly line",
-          "polygon": [[120, 240], [1160, 235], [1200, 700], [80, 705]],
-          "required_ppe": ["helmet", "gloves"],
+          "polygon": [
+            [
+              120,
+              240
+            ],
+            [
+              1160,
+              235
+            ],
+            [
+              1200,
+              700
+            ],
+            [
+              80,
+              705
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "gloves"
+          ],
           "severity_multiplier": 1.0,
           "notes": "Manual handling of sheet stock. Hand protection required."
+        }
+      ]
+    },
+    "d_view02": {
+      "label": "Site north - barriered walkway",
+      "frame_size": [
+        586,
+        480
+      ],
+      "default_ppe": [
+        "helmet"
+      ],
+      "zones": [
+        {
+          "name": "walkway",
+          "label": "Pedestrian walkway between barriers",
+          "polygon": [
+            [
+              280,
+              0
+            ],
+            [
+              586,
+              0
+            ],
+            [
+              586,
+              480
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              230,
+              120
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "vest"
+          ],
+          "severity_multiplier": 1.0,
+          "notes": "Segregated pedestrian route. Head and high-visibility only; this is transit, not work."
+        },
+        {
+          "name": "work_area",
+          "label": "Work area beyond the barrier line",
+          "polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              280,
+              0
+            ],
+            [
+              230,
+              120
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              0,
+              480
+            ]
+          ],
+          "required_ppe": [
+            "helmet",
+            "vest",
+            "gloves"
+          ],
+          "severity_multiplier": 1.5,
+          "notes": "Beyond the pedestrian segregation. Manual handling expected, so hand protection is required."
+        }
+      ]
+    },
+    "d_view02_test": {
+      "label": "TEST ONLY - forces a confirmation, not a real policy",
+      "frame_size": [
+        586,
+        480
+      ],
+      "default_ppe": [
+        "helmet"
+      ],
+      "zones": [
+        {
+          "name": "walkway",
+          "label": "Pedestrian walkway between barriers",
+          "polygon": [
+            [
+              280,
+              0
+            ],
+            [
+              586,
+              0
+            ],
+            [
+              586,
+              480
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              230,
+              120
+            ]
+          ],
+          "required_ppe": [
+            "goggles",
+            "helmet",
+            "vest"
+          ],
+          "severity_multiplier": 1.0,
+          "notes": "TEST FIXTURE: goggles added so the confirmed-violation path executes."
+        },
+        {
+          "name": "work_area",
+          "label": "Work area beyond the barrier line",
+          "polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              280,
+              0
+            ],
+            [
+              230,
+              120
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              0,
+              480
+            ]
+          ],
+          "required_ppe": [
+            "gloves",
+            "goggles",
+            "helmet",
+            "vest"
+          ],
+          "severity_multiplier": 1.5,
+          "notes": "TEST FIXTURE: goggles added so the confirmed-violation path executes."
         }
       ]
     }

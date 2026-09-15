@@ -83,7 +83,10 @@ class EvidenceStore:
         colour = BOX_MISSING if label else BOX_PERSON
         cv2.rectangle(annotated, (x1, y1), (x2, y2), colour, 3)
         if label:
-            _caption(cv2, annotated, label, x1, y1, colour)
+            # Keep the caption inside what the crop will actually contain, or the
+            # reviewer sees a truncated allegation.
+            crop_width = int((x2 - x1) * (1 + 2 * self.pad))
+            _caption(cv2, annotated, label, x1, y1, colour, max_width=crop_width)
 
         crop = self._crop(annotated, bbox)
         frame_out = self._downscale(annotated)
@@ -162,10 +165,26 @@ class EvidenceStore:
         self.root.mkdir(parents=True, exist_ok=True)
 
 
-def _caption(cv2, img, text: str, x: int, y: int, colour) -> None:
-    """Readable label that stays inside the frame."""
-    font, scale, thick = cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2
-    (tw, th), base = cv2.getTextSize(text, font, scale, thick)
-    ty = max(th + 6, y)
+def _caption(cv2, img, text: str, x: int, y: int, colour, max_width: int = 0) -> None:
+    """Readable label that stays inside the image and inside the crop.
+
+    Shrinks to fit rather than running off the edge -- a clipped label ("missing
+    goggle") is worse than a small one, because the reviewer cannot tell what was
+    actually alleged.
+    """
+    font, thick = cv2.FONT_HERSHEY_SIMPLEX, 2
+    limit = max_width or (img.shape[1] - x - 8)
+
+    scale = 0.6
+    while scale > 0.3:
+        (tw, th), base = cv2.getTextSize(text, font, scale, thick)
+        if tw + 8 <= limit:
+            break
+        scale -= 0.05
+    else:
+        (tw, th), base = cv2.getTextSize(text, font, scale, thick)
+
+    x = max(0, min(x, img.shape[1] - tw - 8))
+    ty = max(th + base + 4, y)
     cv2.rectangle(img, (x, ty - th - base - 4), (x + tw + 8, ty), colour, -1)
     cv2.putText(img, text, (x + 4, ty - base - 1), font, scale, TEXT, thick, cv2.LINE_AA)
