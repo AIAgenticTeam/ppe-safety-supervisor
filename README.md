@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 python zones.py zones.json               # validate the zone config
 python make_fixtures.py --out fixtures   # regenerate 20 sample events
-python -m pytest tests -q                # 94 contract, integration and tracking tests
+python -m pytest tests -q                # 102 contract, integration and tracking tests
 ```
 
 **You do not need a GPU or the trained model to work on the agent layer.** `fixtures/`
@@ -101,6 +101,7 @@ python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 | `evidence.py` | Local evidence store — annotated frame + crop per finding | A |
 | `make_fixtures.py` | Generates sample events with no GPU required | A |
 | `zones.json` | Zone polygons and per-zone PPE requirements | A |
+| `zones.test.json` | **Test-only** config; never loaded by the pipeline | A |
 | `restratify.py` | Re-splits a YOLO dataset so every class is in every split | A |
 | `notebooks/` | YOLO26 training and evaluation runbook | A |
 | `kb/` | OSHA ingest, chunking, FAISS index, clause map, Ragas | B |

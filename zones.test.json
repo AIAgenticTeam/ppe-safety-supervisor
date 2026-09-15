@@ -1,0 +1,84 @@
+{
+  "_comment": "Test-only zone config. NEVER use this for findings. It duplicates d_view02's geometry with goggles bolted on, because the worker in scene_02 is wearing his helmet and vest and is therefore compliant -- under the real policy nothing fires, and the confirm/evidence/emit path would go untested. Requiring an item he plainly is not wearing forces that path to execute. Kept out of zones.json so a wrong policy can never be one typo away from the demo.",
+  "cameras": {
+    "d_view02_test": {
+      "label": "Forces a confirmation on compliant footage - regression test only",
+      "frame_size": [
+        586,
+        480
+      ],
+      "default_ppe": [
+        "helmet"
+      ],
+      "zones": [
+        {
+          "name": "walkway",
+          "label": "Pedestrian walkway between barriers",
+          "polygon": [
+            [
+              280,
+              0
+            ],
+            [
+              586,
+              0
+            ],
+            [
+              586,
+              480
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              230,
+              120
+            ]
+          ],
+          "required_ppe": [
+            "goggles",
+            "helmet",
+            "vest"
+          ],
+          "severity_multiplier": 1.0,
+          "notes": "TEST FIXTURE: goggles added so the confirmed-violation path executes."
+        },
+        {
+          "name": "work_area",
+          "label": "Work area beyond the barrier line",
+          "polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              280,
+              0
+            ],
+            [
+              230,
+              120
+            ],
+            [
+              400,
+              480
+            ],
+            [
+              0,
+              480
+            ]
+          ],
+          "required_ppe": [
+            "gloves",
+            "goggles",
+            "helmet",
+            "vest"
+          ],
+          "severity_multiplier": 1.5,
+          "notes": "TEST FIXTURE: goggles added so the confirmed-violation path executes."
+        }
+      ]
+    }
+  }
+}
