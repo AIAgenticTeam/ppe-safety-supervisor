@@ -1,0 +1,59 @@
+{
+  "model": "gpt-4o-mini",
+  "n_cases": 3,
+  "scores": {
+    "context_precision": 0.8333333332944445,
+    "context_recall": 0.8333333333333334,
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9800471400580104
+  },
+  "per_sample": {
+    "context_precision": [
+      0.49999999995,
+      0.9999999999666667,
+      0.9999999999666667
+    ],
+    "context_recall": [
+      1.0,
+      1.0,
+      0.5
+    ],
+    "faithfulness": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "answer_relevancy": [
+      1.0000000000000002,
+      0.9726760438882395,
+      0.9674653762857917
+    ]
+  },
+  "tokens": {
+    "generation_in": 561,
+    "generation_out": 113,
+    "judge_in": 16932,
+    "judge_out": 3530
+  },
+  "cost_usd": 0.0048,
+  "per_case": [
+    {
+      "question": "When must employees wear protective helmets on a construction site?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Employees must wear protective helmets on a construction site when there is a possible danger of head injury from impact, or from falling or flying objects, or from electrical shock and burns."
+    },
+    {
+      "question": "Is head protection required where objects may fall from above?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Yes, head protection is required where there is a possible danger of head injury from falling objects."
+    },
+    {
+      "question": "Which consensus standards may head protection meet?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Head protection may meet the following consensus standards:\n\n1. American National Standards Institute (ANSI) Z89.1-1997\n2. American National Standards Institute (ANSI) Z89.1-2003\n3. American National Standards Institute (ANSI) Z89.1-2009"
+    }
+  ]
+}

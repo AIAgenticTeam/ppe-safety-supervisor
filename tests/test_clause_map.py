@@ -37,14 +37,37 @@ def test_every_detected_class_has_a_rule(cm):
 # ---------------------------------------------------------------- citations
 
 @pytest.mark.parametrize("item,clause", [
-    ("helmet", "1926.100"),
-    ("goggles", "1926.102"),
-    ("boots", "1926.96"),
+    ("helmet", "1926.100"),      # "shall be protected by protective helmets"
+    ("goggles", "1926.102"),     # "shall ensure that each affected employee uses"
 ])
-def test_specific_clauses(cm, item, clause):
+def test_items_with_a_real_duty_to_wear(cm, item, clause):
+    """Only two PPE classes have a construction clause that squarely requires them."""
     rule = cm.for_item(item)
     assert rule.clause.clause_id == clause
     assert rule.is_regulatory
+
+
+def test_boots_are_site_policy_not_regulation(cm):
+    """1926.96 is a SPECIFICATION clause -- it says safety-toe footwear must meet ANSI
+    Z41.1-1967, not that it must be worn. Construction has no equivalent of general
+    industry's 1910.136, so the duty rests on 1926.95(a) and 1926.28(a).
+
+    The earlier version of this map claimed 1926.96 required footwear to be worn, which
+    is 1910.136 text. The Ragas evaluation caught it: the model kept answering "the
+    regulation text does not contain the answer", and it was right.
+    """
+    rule = cm.for_item("boots")
+    assert rule.clause.clause_id == "1926.95"
+    assert not rule.is_regulatory
+    assert "site policy" in rule.notice_phrase.lower()
+
+
+def test_no_item_claims_a_general_industry_clause(cm):
+    """1910.136 and 1910.138 are general industry and must never appear here."""
+    for item in cm.known_items:
+        rule = cm.for_item(item)
+        assert not rule.clause.clause_id.startswith("1910."), (
+            f"{item} cites {rule.clause.clause_id}, which is general industry")
 
 
 def test_scope_is_construction_not_general_industry(cm):

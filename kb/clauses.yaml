@@ -50,10 +50,12 @@ clauses:
   "1926.96":
     title: "Occupational foot protection"
     subpart: E
-    authority: specific
+    authority: narrow
     summary: >
-      Safety-toe footwear shall be worn where there is a danger of foot injuries due to
-      falling or rolling objects, or objects piercing the sole.
+      Safety-toe footwear for employees shall meet the requirements and specifications in
+      ANSI Z41.1-1967. This is a SPECIFICATION clause only -- it states what footwear must
+      meet, not when it must be worn. Construction has no equivalent of general industry's
+      1910.136, so the duty to wear comes from 1926.95(a) and 1926.28(a).
 
   "1926.95":
     title: "Criteria for personal protective equipment"
@@ -79,9 +81,10 @@ clauses:
     subpart: G
     authority: narrow
     summary: >
-      Flaggers shall be provided with and shall wear a warning garment such as a vest,
-      jacket or shirt. Applies to flaggers directing traffic, NOT to high-visibility
-      clothing generally.
+      Signaling by flaggers, including warning garments worn by flaggers, shall conform to
+      Part 6 of the MUTCD, incorporated by reference. The garment requirement is therefore
+      in the MUTCD, not stated in this clause directly. Applies to flaggers directing
+      traffic, NOT to high-visibility clothing generally.
 
 # ---------------------------------------------------------------------------
 # PPE class -> clause. `basis` is what the notice must say it is relying on.
@@ -104,9 +107,20 @@ items:
     notice_phrase: "eye and face protection required under 29 CFR 1926.102"
 
   boots:
-    clause: "1926.96"
-    basis: regulation
-    notice_phrase: "protective footwear required under 29 CFR 1926.96"
+    clause: "1926.95"
+    basis: site_policy
+    supporting_clause: "1926.28"
+    specification_clause: "1926.96"
+    notice_phrase: >
+      protective footwear required by site policy, supported by the employer's duty under
+      29 CFR 1926.95 and 1926.28 to provide PPE where hazards make it necessary; where
+      safety-toe footwear is used it must meet the specification in 29 CFR 1926.96
+    note: >
+      CORRECTED 16 Sep 2026. 1926.96 is a specification clause only -- it says what
+      safety-toe footwear must MEET, not when it must be WORN. The earlier version of
+      this entry quoted 1910.136, which is general industry and does not apply to
+      construction. Found by the Ragas evaluation: the model kept answering "the
+      regulation text does not contain the answer", and it was right.
 
   gloves:
     clause: "1926.95"
@@ -153,9 +167,12 @@ zone_overrides:
 
   loading_dock:
     boots:
-      clause: "1926.96"
-      basis: regulation
-      reason: "falling and rolling objects during materials handling"
+      clause: "1926.95"
+      basis: site_policy
+      reason: >
+        falling and rolling objects during materials handling. Still site policy: 1926.96
+        specifies what safety-toe footwear must meet, but construction has no clause
+        requiring it to be worn, so the duty rests on 1926.95(a) and 1926.28(a).
     vest:
       clause: "1926.201"
       basis: regulation

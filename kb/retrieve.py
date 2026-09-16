@@ -137,6 +137,65 @@ class Retriever:
                 break
         return hits
 
+    def search_for_answer(self, query: str, item: str | None = None, k: int = 3,
+                          sections: int = 2) -> list[Hit]:
+        """Retrieval for question answering, as opposed to citation routing.
+
+        The two tasks want opposite things and neither single mode serves both:
+
+          one_per_section=True   picks the right SECTION, because a long clause cannot
+                                 fill every slot. But it then discards the other
+                                 paragraphs of that clause -- a helmet question came
+                                 back with an ANSI cross-reference and the general duty,
+                                 and never 1926.100(a), the sentence that answers it.
+
+          one_per_section=False  gets the operative paragraphs, but lets a 14-paragraph
+                                 clause crowd out a 1-paragraph one. 1926.96 is a single
+                                 sentence about footwear and loses every time to 1926.95.
+
+        So: pick sections with deduplication, then expand the winners into their best
+        paragraphs. Right clause AND the text that answers the question.
+        """
+        leaders = self.search(query, item=item, k=sections, one_per_section=True)
+        if not leaders:
+            return []
+
+        wanted = [h.section for h in leaders]          # ordered, best section first
+        vector = self.model.encode([query], normalize_embeddings=True)
+        scores, indices = self.index.search(vector, self.index.ntotal)
+
+        # Group the winning sections' chunks, best first within each.
+        by_section: dict[str, list] = {s: [] for s in wanted}
+        for score, idx in zip(scores[0], indices[0]):
+            if idx < 0:
+                continue
+            chunk = self.chunks[idx]
+            if chunk["section"] not in by_section:
+                continue
+            if item and item not in chunk["topics"]:
+                continue
+            by_section[chunk["section"]].append((float(score), chunk))
+
+        # Every winning section gets its best chunk BEFORE any section gets a second.
+        # Without this, a 14-paragraph clause fills all k slots and a 1-paragraph clause
+        # that stage 1 ranked second never appears at all -- which is exactly how
+        # 1926.96 kept losing its single sentence about footwear to 1926.95.
+        ordered: list[tuple[float, dict]] = []
+        depth = 0
+        while len(ordered) < k and any(len(v) > depth for v in by_section.values()):
+            for section in wanted:
+                chunks = by_section[section]
+                if len(chunks) > depth:
+                    ordered.append(chunks[depth])
+                    if len(ordered) == k:
+                        break
+            depth += 1
+
+        return [Hit(rank=i, score=score, citation=c["citation"], section=c["section"],
+                    paragraph=c["paragraph"], section_title=c["section_title"],
+                    text=c["text"])
+                for i, (score, c) in enumerate(ordered, 1)]
+
     # ---- direct lookup, no similarity involved --------------------------
 
     def text_for(self, clause_id: str, max_chars: int = 1200) -> str:

@@ -20,61 +20,13 @@ from __future__ import annotations
 
 import argparse
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
-@dataclass(frozen=True)
-class Case:
-    query: str
-    expect_section: str
-    item: str | None = None
-    note: str = ""
-
-
-# Phrased the way an event description would be, not the way the regulation is. That gap
-# is the thing being measured -- "no hard hat" has to find a clause that says "protective
-# helmets", and nothing in the corpus uses the words a supervisor would.
-CASES: list[Case] = [
-    # --- head -----------------------------------------------------------
-    Case("worker not wearing a hard hat", "1926.100", "helmet"),
-    Case("no helmet in an area with overhead work", "1926.100", "helmet"),
-    Case("head protection requirements and ANSI standard", "1926.100", "helmet"),
-    Case("bare head near falling objects", "1926.100", "helmet"),
-
-    # --- eye and face ---------------------------------------------------
-    Case("no eye protection while using a grinder", "1926.102", "goggles"),
-    Case("worker without goggles near flying particles", "1926.102", "goggles"),
-    Case("face shield requirements for welding", "1926.102", "goggles"),
-    Case("eye protection for employees exposed to chemical splash", "1926.102", "goggles"),
-
-    # --- feet -----------------------------------------------------------
-    Case("no safety boots on the loading dock", "1926.96", "boots"),
-    Case("foot protection where objects may fall or roll", "1926.96", "boots"),
-    Case("worker in trainers on site", "1926.96", "boots"),
-
-    # --- hands ----------------------------------------------------------
-    # Construction has no hand-protection section, so these must land on the general
-    # criterion. A hit on 1910.138 would mean the corpus was built from the wrong part.
-    Case("worker handling materials with bare hands", "1926.95", "gloves"),
-    Case("no gloves while operating an abrasive wheel", "1926.95", "gloves"),
-    Case("hand protection requirement on a construction site", "1926.95", "gloves"),
-
-    # --- high visibility ------------------------------------------------
-    Case("worker without a high visibility vest", "1926.95", "vest"),
-    Case("no hi-vis clothing near moving plant", "1926.95", "vest"),
-    Case("flagger directing traffic without a warning garment", "1926.201", "vest",
-         "the one case where hi-vis IS squarely regulated"),
-
-    # --- general duty ---------------------------------------------------
-    Case("who is responsible for providing protective equipment", "1926.28"),
-    Case("employer duty to require PPE where hazards exist", "1926.28"),
-    Case("protective equipment shall be provided and maintained in sanitary condition",
-         "1926.95"),
-]
+from kb.eval_cases import CASES, Case  # noqa: E402  -- one source of truth
 
 
 def recall_at_k(hits, expected: str, k: int) -> bool:

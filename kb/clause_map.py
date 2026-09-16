@@ -281,6 +281,10 @@ class ClauseMap:
         used = {r["clause"] for r in self._items.values()}
         used |= {r["supporting_clause"] for r in self._items.values()
                  if r.get("supporting_clause")}
+        # A specification clause is cited too -- 1926.96 says what safety-toe footwear
+        # must MEET even though the duty to wear it comes from elsewhere.
+        used |= {r["specification_clause"] for r in self._items.values()
+                 if r.get("specification_clause")}
         used |= {ov["clause"] for z in self._overrides.values() for ov in z.values()}
         for cid in self._clauses:
             if cid not in used:

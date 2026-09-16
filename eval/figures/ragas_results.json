@@ -1,0 +1,229 @@
+{
+  "model": "gpt-4o-mini",
+  "n_cases": 20,
+  "scores": {
+    "context_precision": 0.6833333332858333,
+    "context_recall": 0.8,
+    "faithfulness": 0.7083333333333333,
+    "answer_relevancy": 0.5134093188488544
+  },
+  "per_sample": {
+    "context_precision": [
+      0.3333333333,
+      0.8333333332916666,
+      0.8333333332916666,
+      0.8333333332916666,
+      0.9999999999,
+      0.8333333332916666,
+      0.9999999999,
+      0.9999999999,
+      0.0,
+      0.9999999999,
+      0.99999999995,
+      0.0,
+      0.49999999995,
+      0.0,
+      0.49999999995,
+      0.0,
+      0.9999999999,
+      0.9999999999666667,
+      0.9999999999666667,
+      0.9999999999666667
+    ],
+    "context_recall": [
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.5,
+      0.5,
+      0.0,
+      1.0,
+      1.0,
+      0.5,
+      1.0,
+      1.0,
+      0.5,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "faithfulness": [
+      0.8333333333333334,
+      1.0,
+      1.0,
+      1.0,
+      0.5,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.6666666666666666,
+      0.3333333333333333,
+      0.0,
+      1.0,
+      0.0,
+      0.5,
+      0.0,
+      0.6666666666666666,
+      0.6666666666666666,
+      1.0,
+      1.0
+    ],
+    "answer_relevancy": [
+      1.0000000000000002,
+      0.9728791900361037,
+      0.9674653762857917,
+      0.8876655797885791,
+      0.920036647382149,
+      0.9484721514955766,
+      0.0,
+      0.9557905117553296,
+      0.0,
+      0.8530620877768766,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.9383811727902669,
+      0.8778238815372497,
+      0.9466097781291642
+    ]
+  },
+  "tokens": {
+    "generation_in": 3578,
+    "generation_out": 511,
+    "judge_in": 111322,
+    "judge_out": 19326
+  },
+  "cost_usd": 0.0291,
+  "per_case": [
+    {
+      "question": "When must employees wear protective helmets on a construction site?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Employees must wear protective helmets on a construction site when there is a possible danger of head injury from impact, or from falling or flying objects, or from electrical shock and burns."
+    },
+    {
+      "question": "Is head protection required where objects may fall from above?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Yes, head protection is required where there is a possible danger of head injury from falling objects."
+    },
+    {
+      "question": "Which consensus standards may head protection meet?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Head protection may meet the following consensus standards: \n\n1. American National Standards Institute (ANSI) Z89.1-1997\n2. American National Standards Institute (ANSI) Z89.1-2009"
+    },
+    {
+      "question": "What protects an employee from head injury by falling objects?",
+      "expected": "1926.100",
+      "n_contexts": 3,
+      "response": "Protective helmets protect an employee from head injury by falling objects."
+    },
+    {
+      "question": "When must eye and face protection be provided?",
+      "expected": "1926.102",
+      "n_contexts": 3,
+      "response": "Eye and face protection must be provided when employees are exposed to eye or face hazards from flying particles, molten metal, liquid chemicals, acids or caustic liquids, chemical gases or vapors, or potentially injurious light radiation."
+    },
+    {
+      "question": "Is eye protection required where particles may fly?",
+      "expected": "1926.102",
+      "n_contexts": 3,
+      "response": "Yes, eye protection is required where there is a hazard from flying objects."
+    },
+    {
+      "question": "What eye protection applies to welding operations?",
+      "expected": "1926.102",
+      "n_contexts": 3,
+      "response": "The regulation text does not specify the type of eye protection that applies to welding operations."
+    },
+    {
+      "question": "Is eye protection required against chemical agents?",
+      "expected": "1926.102",
+      "n_contexts": 3,
+      "response": "Yes, eye protection is required when exposed to liquid chemicals, acids or caustic liquids, chemical gases or vapors."
+    },
+    {
+      "question": "When must safety-toe footwear be worn?",
+      "expected": "1926.96",
+      "n_contexts": 3,
+      "response": "The regulation text does not contain the answer to when safety-toe footwear must be worn."
+    },
+    {
+      "question": "What foot protection applies where objects may fall or roll?",
+      "expected": "1926.96",
+      "n_contexts": 3,
+      "response": "Safety-toe footwear for employees shall meet the requirements and specifications in American National Standard for Men's Safety-Toe Footwear, Z41.1-1967."
+    },
+    {
+      "question": "Is ordinary footwear acceptable where foot injury is possible?",
+      "expected": "1926.96",
+      "n_contexts": 3,
+      "response": "The regulation text does not provide an answer to whether ordinary footwear is acceptable where foot injury is possible."
+    },
+    {
+      "question": "What does the construction PPE criterion say about protecting the extremities?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "The regulation text does not contain an answer regarding the construction PPE criterion and protecting the extremities."
+    },
+    {
+      "question": "Must hand protection be provided where a process creates a hazard?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "The regulation text does not contain an answer to whether hand protection must be provided where a process creates a hazard."
+    },
+    {
+      "question": "Who must provide protective equipment for the hands in construction?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "The regulation text does not contain the answer to who must provide protective equipment for the hands in construction."
+    },
+    {
+      "question": "Does the general construction PPE criterion cover protective clothing?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "The regulation text does not provide an answer to whether the general construction PPE criterion covers protective clothing."
+    },
+    {
+      "question": "On what basis is protective clothing required where hazards exist?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "The regulation text does not contain an answer to the question regarding the basis on which protective clothing is required where hazards exist."
+    },
+    {
+      "question": "What must a flagger wear while directing traffic?",
+      "expected": "1926.201",
+      "n_contexts": 3,
+      "response": "The regulation text states that the use of flaggers, including warning garments worn by flaggers, shall conform to Part 6 of the MUTCD. However, it does not specify what a flagger must wear."
+    },
+    {
+      "question": "Who is responsible for requiring the use of PPE on a construction site?",
+      "expected": "1926.28",
+      "n_contexts": 3,
+      "response": "The employer is responsible for requiring the wearing of appropriate personal protective equipment in all operations where there is an exposure to hazardous conditions."
+    },
+    {
+      "question": "What is the employer's duty where employees are exposed to hazards?",
+      "expected": "1926.28",
+      "n_contexts": 3,
+      "response": "The employer is responsible for requiring the wearing of appropriate personal protective equipment in all operations where there is an exposure to hazardous conditions or where this part indicates the need for using such equipment to reduce the hazards to the employees."
+    },
+    {
+      "question": "In what condition must protective equipment be maintained?",
+      "expected": "1926.95",
+      "n_contexts": 3,
+      "response": "Protective equipment must be maintained in a sanitary and reliable condition."
+    }
+  ]
+}
