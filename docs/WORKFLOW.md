@@ -54,3 +54,25 @@ machine and it will not be yours.
 - [ ] No secrets in history: `git log -p | grep -iE "sk-|api_key|secret"`
 - [ ] Recorded demo fallback committed or linked
 - [ ] Technical report in `docs/`
+
+## Secrets
+
+`.env.example` is **committed**. `.env` is **gitignored**. Real keys go in `.env`, never
+in the template — a key in `.env.example` goes to GitHub the moment anyone commits.
+
+Three layers guard this, because removing a secret from git history is not the same as
+it never being there:
+
+1. `.gitignore` excludes `.env`
+2. `tests/test_no_secrets.py` fails if a value appears in `.env.example`, or if anything
+   credential-shaped lands in a tracked file
+3. `.githooks/pre-commit` blocks the commit outright
+
+Enable the hook once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+If a key ever does reach a commit: **rotate it first**, then worry about history. A
+revoked key in a public repo is a curiosity; a live one is an incident.

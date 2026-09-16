@@ -1,0 +1,10 @@
+#!/bin/sh
+# Refuse any commit containing something shaped like a live credential.
+# Install once per clone:  git config core.hooksPath .githooks
+if git diff --cached -U0 | grep -nE '^\+.*(sk-[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_-]{30,}|ghp_[A-Za-z0-9]{30,}|AKIA[A-Z0-9]{16})' >/dev/null; then
+  echo "BLOCKED: a staged change contains something shaped like an API key."
+  echo "Real keys belong in .env, which is gitignored. .env.example ships empty."
+  git diff --cached -U0 | grep -nE '^\+.*(sk-|AIza|ghp_|AKIA)' | cut -c1-90
+  exit 1
+fi
+exit 0
