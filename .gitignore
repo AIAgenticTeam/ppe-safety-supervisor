@@ -63,3 +63,6 @@ Thumbs.db
 # pipeline output
 events/
 data/footage/scenes/
+
+# built artifacts — rebuild with kb/build_index.py
+kb/index/

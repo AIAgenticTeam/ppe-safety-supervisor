@@ -1,0 +1,738 @@
+[
+  {
+    "chunk_id": "1926.28(a)",
+    "section": "1926.28",
+    "paragraph": "(a)",
+    "citation": "29 CFR 1926.28(a)",
+    "section_title": "Personal protective equipment",
+    "subpart": "C",
+    "text": "(a) The employer is responsible for requiring the wearing of appropriate personal protective equipment in all operations where there is an exposure to hazardous conditions or where this part indicates the need for using such equipment to reduce the hazards to the employees.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 274
+  },
+  {
+    "chunk_id": "1926.28(b)",
+    "section": "1926.28",
+    "paragraph": "(b)",
+    "citation": "29 CFR 1926.28(b)",
+    "section_title": "Personal protective equipment",
+    "subpart": "C",
+    "text": "(b) Regulations governing the use, selection, and maintenance of personal protective and lifesaving equipment are described under subpart E of this part.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 153
+  },
+  {
+    "chunk_id": "1926.95(a)",
+    "section": "1926.95",
+    "paragraph": "(a)",
+    "citation": "29 CFR 1926.95(a)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(a) Application. Protective equipment, including personal protective equipment for eyes, face, head, and extremities, protective clothing, respiratory devices, and protective shields and barriers, shall be provided, used, and maintained in a sanitary and reliable condition wherever it is necessary by reason of hazards of processes or environment, chemical hazards, radiological hazards, or mechanical irritants encountered in a manner capable of causing injury or impairment in the function of any part of the body through absorption, inhalation or physical contact.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 568
+  },
+  {
+    "chunk_id": "1926.95(b)",
+    "section": "1926.95",
+    "paragraph": "(b)",
+    "citation": "29 CFR 1926.95(b)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(b) Employee-owned equipment. Where employees provide their own protective equipment, the employer shall be responsible to assure its adequacy, including proper maintenance, and sanitation of such equipment.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 207
+  },
+  {
+    "chunk_id": "1926.95(c)",
+    "section": "1926.95",
+    "paragraph": "(c)",
+    "citation": "29 CFR 1926.95(c)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(c) Design and selection. Employers must ensure that all personal protective equipment:",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 87
+  },
+  {
+    "chunk_id": "1926.95(c)(1)",
+    "section": "1926.95",
+    "paragraph": "(c)(1)",
+    "citation": "29 CFR 1926.95(c)(1)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(1) Is of safe design and construction for the work to be performed; and",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 72
+  },
+  {
+    "chunk_id": "1926.95(c)(2)",
+    "section": "1926.95",
+    "paragraph": "(c)(2)",
+    "citation": "29 CFR 1926.95(c)(2)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(2) Is selected to ensure that it properly fits each affected employee.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 71
+  },
+  {
+    "chunk_id": "1926.95(d)(1)",
+    "section": "1926.95",
+    "paragraph": "(d)(1)",
+    "citation": "29 CFR 1926.95(d)(1)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(d) Payment for protective equipment. (1) Except as provided by paragraphs (d)(2) through (d)(6) of this section, the protective equipment, including personal protective equipment (PPE), used to comply with this part, shall be provided by the employer at no cost to employees.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 276
+  },
+  {
+    "chunk_id": "1926.95(d)(2)",
+    "section": "1926.95",
+    "paragraph": "(d)(2)",
+    "citation": "29 CFR 1926.95(d)(2)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(2) The employer is not required to pay for non-specialty safety-toe protective footwear (including steel-toe shoes or steel-toe boots) and non-specialty prescription safety eyewear, provided that the employer permits such items to be worn off the job-site.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 257
+  },
+  {
+    "chunk_id": "1926.95(d)(3)",
+    "section": "1926.95",
+    "paragraph": "(d)(3)",
+    "citation": "29 CFR 1926.95(d)(3)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(3) When the employer provides metatarsal guards and allows the employee, at his or her request, to use shoes or boots with built-in metatarsal protection, the employer is not required to reimburse the employee for the shoes or boots.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 234
+  },
+  {
+    "chunk_id": "1926.95(d)(4)",
+    "section": "1926.95",
+    "paragraph": "(d)(4)",
+    "citation": "29 CFR 1926.95(d)(4)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(4) The employer is not required to pay for:",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 44
+  },
+  {
+    "chunk_id": "1926.95(d)(4)(i)",
+    "section": "1926.95",
+    "paragraph": "(d)(4)(i)",
+    "citation": "29 CFR 1926.95(d)(4)(i)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(i) Everyday clothing, such as long-sleeve shirts, long pants, street shoes, and normal work boots; or",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 102
+  },
+  {
+    "chunk_id": "1926.95(d)(4)(ii)",
+    "section": "1926.95",
+    "paragraph": "(d)(4)(ii)",
+    "citation": "29 CFR 1926.95(d)(4)(ii)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(ii) Ordinary clothing, skin creams, or other items, used solely for protection from weather, such as winter coats, jackets, gloves, parkas, rubber boots, hats, raincoats, ordinary sunglasses, and sunscreen.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 207
+  },
+  {
+    "chunk_id": "1926.95(d)(5)",
+    "section": "1926.95",
+    "paragraph": "(d)(5)",
+    "citation": "29 CFR 1926.95(d)(5)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(5) The employer must pay for replacement PPE, except when the employee has lost or intentionally damaged the PPE.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 114
+  },
+  {
+    "chunk_id": "1926.95(d)(6)",
+    "section": "1926.95",
+    "paragraph": "(d)(6)",
+    "citation": "29 CFR 1926.95(d)(6)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(6) Where an employee provides adequate protective equipment he or she owns pursuant to paragraph (b) of this section, the employer may allow the employee to use it and is not required to reimburse the employee for that equipment. The employer shall not require an employee to provide or pay for his or her own PPE, unless the PPE is excepted by paragraphs (d)(2) through (d)(5) of this section.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 395
+  },
+  {
+    "chunk_id": "1926.95(d)(7)",
+    "section": "1926.95",
+    "paragraph": "(d)(7)",
+    "citation": "29 CFR 1926.95(d)(7)",
+    "section_title": "Criteria for personal protective equipment",
+    "subpart": "E",
+    "text": "(7) This section shall become effective on February 13, 2008. Employers must implement the PPE payment requirements no later than May 15, 2008.",
+    "topics": [
+      "helmet",
+      "goggles",
+      "gloves",
+      "boots",
+      "vest"
+    ],
+    "authority": "general",
+    "char_count": 143
+  },
+  {
+    "chunk_id": "1926.96",
+    "section": "1926.96",
+    "paragraph": "",
+    "citation": "29 CFR 1926.96",
+    "section_title": "Occupational foot protection",
+    "subpart": "E",
+    "text": "Safety-toe footwear for employees shall meet the requirements and specifications in American National Standard for Men's Safety-Toe Footwear, Z41.1-1967.",
+    "topics": [
+      "boots"
+    ],
+    "authority": "specific",
+    "char_count": 153
+  },
+  {
+    "chunk_id": "1926.100(a)",
+    "section": "1926.100",
+    "paragraph": "(a)",
+    "citation": "29 CFR 1926.100(a)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(a) Employees working in areas where there is a possible danger of head injury from impact, or from falling or flying objects, or from electrical shock and burns, shall be protected by protective helmets.",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 204
+  },
+  {
+    "chunk_id": "1926.100(b)(1)",
+    "section": "1926.100",
+    "paragraph": "(b)(1)",
+    "citation": "29 CFR 1926.100(b)(1)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(b) Criteria for head protection. (1) The employer must provide each employee with head protection that meets the specifications contained in any of the following consensus standards:",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 183
+  },
+  {
+    "chunk_id": "1926.100(b)(1)(i)",
+    "section": "1926.100",
+    "paragraph": "(b)(1)(i)",
+    "citation": "29 CFR 1926.100(b)(1)(i)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(i) American National Standards Institute (ANSI) Z89.1-2009, \u201cAmerican National Standard for Industrial Head Protection,\u201d incorporated by reference in \u00a7 1926.6;",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 160
+  },
+  {
+    "chunk_id": "1926.100(b)(1)(ii)",
+    "section": "1926.100",
+    "paragraph": "(b)(1)(ii)",
+    "citation": "29 CFR 1926.100(b)(1)(ii)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(ii) American National Standards Institute (ANSI) Z89.1-2003, \u201cAmerican National Standard for Industrial Head Protection,\u201d incorporated by reference in \u00a7 1926.6; or",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 164
+  },
+  {
+    "chunk_id": "1926.100(b)(1)(iii)",
+    "section": "1926.100",
+    "paragraph": "(b)(1)(iii)",
+    "citation": "29 CFR 1926.100(b)(1)(iii)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(iii) American National Standards Institute (ANSI) Z89.1-1997, \u201cAmerican National Standard for Personnel Protection\u2014Protective Headwear for Industrial Workers\u2014Requirements,\u201d incorporated by reference in \u00a7 1926.6.",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 212
+  },
+  {
+    "chunk_id": "1926.100(b)(2)",
+    "section": "1926.100",
+    "paragraph": "(b)(2)",
+    "citation": "29 CFR 1926.100(b)(2)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(2) The employer must ensure that the head protection provided for each employee exposed to high-voltage electric shock and burns also meets the specifications contained in Section 9.7 (\u201cElectrical Insulation\u201d) of any of the consensus standards identified in paragraph (b)(1) of this section.",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 292
+  },
+  {
+    "chunk_id": "1926.100(b)(3)",
+    "section": "1926.100",
+    "paragraph": "(b)(3)",
+    "citation": "29 CFR 1926.100(b)(3)",
+    "section_title": "Head protection",
+    "subpart": "E",
+    "text": "(3) OSHA will deem any head protection device that the employer demonstrates is at least as effective as a head protection device constructed in accordance with one of the consensus standards identified in paragraph (b)(1) of this section to be in compliance with the requirements of this section.",
+    "topics": [
+      "helmet"
+    ],
+    "authority": "specific",
+    "char_count": 297
+  },
+  {
+    "chunk_id": "1926.102(a)(1)",
+    "section": "1926.102",
+    "paragraph": "(a)(1)",
+    "citation": "29 CFR 1926.102(a)(1)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(a) General. (1) The employer shall ensure that each affected employee uses appropriate eye or face protection when exposed to eye or face hazards from flying particles, molten metal, liquid chemicals, acids or caustic liquids, chemical gases or vapors, or potentially injurious light radiation.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 295
+  },
+  {
+    "chunk_id": "1926.102(a)(2)",
+    "section": "1926.102",
+    "paragraph": "(a)(2)",
+    "citation": "29 CFR 1926.102(a)(2)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(2) The employer shall ensure that each affected employee uses eye protection that provides side protection when there is a hazard from flying objects. Detachable side protectors (e.g. clip-on or slide-on side shields) meeting the pertinent requirements of this section are acceptable.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 285
+  },
+  {
+    "chunk_id": "1926.102(a)(3)",
+    "section": "1926.102",
+    "paragraph": "(a)(3)",
+    "citation": "29 CFR 1926.102(a)(3)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(3) The employer shall ensure that each affected employee who wears prescription lenses while engaged in operations that involve eye hazards wears eye protection that incorporates the prescription in its design, or wears eye protection that can be worn over the prescription lenses without disturbing the proper position of the prescription lenses or the protective lenses.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 373
+  },
+  {
+    "chunk_id": "1926.102(a)(4)",
+    "section": "1926.102",
+    "paragraph": "(a)(4)",
+    "citation": "29 CFR 1926.102(a)(4)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(4) Eye and face PPE shall be distinctly marked to facilitate identification of the manufacturer.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 97
+  },
+  {
+    "chunk_id": "1926.102(a)(5)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)",
+    "citation": "29 CFR 1926.102(a)(5)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(5) Protectors shall meet the following minimum requirements:",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 61
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(i)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(i)",
+    "citation": "29 CFR 1926.102(a)(5)(i)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(i) They shall provide adequate protection against the particular hazards for which they are designed.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 102
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(ii)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(ii)",
+    "citation": "29 CFR 1926.102(a)(5)(ii)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(ii) They shall be reasonably comfortable when worn under the designated conditions.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 84
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(iii)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(iii)",
+    "citation": "29 CFR 1926.102(a)(5)(iii)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(iii) They shall fit snugly and shall not unduly interfere with the movements of the wearer.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 92
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(iv)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(iv)",
+    "citation": "29 CFR 1926.102(a)(5)(iv)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(iv) They shall be durable.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 27
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(v)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(v)",
+    "citation": "29 CFR 1926.102(a)(5)(v)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(v) They shall be capable of being disinfected.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 47
+  },
+  {
+    "chunk_id": "1926.102(a)(5)(vi)",
+    "section": "1926.102",
+    "paragraph": "(a)(5)(vi)",
+    "citation": "29 CFR 1926.102(a)(5)(vi)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(vi) They shall be easily cleanable.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 36
+  },
+  {
+    "chunk_id": "1926.102(b)(1)",
+    "section": "1926.102",
+    "paragraph": "(b)(1)",
+    "citation": "29 CFR 1926.102(b)(1)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(b) Criteria for protective eye and face protection. (1) Protective eye and face protection devices must comply with any of the following consensus standards:",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 158
+  },
+  {
+    "chunk_id": "1926.102(b)(1)(i)",
+    "section": "1926.102",
+    "paragraph": "(b)(1)(i)",
+    "citation": "29 CFR 1926.102(b)(1)(i)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(i) ANSI/ISEA Z87.1-2010, Occupational and Educational Personal Eye and Face Protection Devices, incorporated by reference in \u00a7 1926.6;",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 135
+  },
+  {
+    "chunk_id": "1926.102(b)(1)(ii)",
+    "section": "1926.102",
+    "paragraph": "(b)(1)(ii)",
+    "citation": "29 CFR 1926.102(b)(1)(ii)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(ii) ANSI Z87.1-2003, Occupational and Educational Personal Eye and Face Protection Devices, incorporated by reference in \u00a7 1926.6; or",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 134
+  },
+  {
+    "chunk_id": "1926.102(b)(1)(iii)",
+    "section": "1926.102",
+    "paragraph": "(b)(1)(iii)",
+    "citation": "29 CFR 1926.102(b)(1)(iii)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(iii) ANSI Z87.1-1989 (R-1998), Practice for Occupational and Educational Eye and Face Protection, incorporated by reference in \u00a7 1926.6;",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 137
+  },
+  {
+    "chunk_id": "1926.102(b)(2)",
+    "section": "1926.102",
+    "paragraph": "(b)(2)",
+    "citation": "29 CFR 1926.102(b)(2)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(2) Protective eye and face protection devices that the employer demonstrates are at least as effective as protective eye and face protection devices that are constructed in accordance with one of the above consensus standards will be deemed to be in compliance with the requirements of this section.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 300
+  },
+  {
+    "chunk_id": "1926.102(c)",
+    "section": "1926.102",
+    "paragraph": "(c)",
+    "citation": "29 CFR 1926.102(c)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(c) Protection against radiant energy\u2014(1) Selection of shade numbers for welding filter. Table E-1 shall be used as a guide for the selection of the proper shade numbers of filter lenses or plates used in welding. Shades more dense than those listed may be used to suit the individual's needs.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 293
+  },
+  {
+    "chunk_id": "1926.102(c)(2)(i)",
+    "section": "1926.102",
+    "paragraph": "(c)(2)(i)",
+    "citation": "29 CFR 1926.102(c)(2)(i)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(2) Laser protection. (i) Employees whose occupation or assignment requires exposure to laser beams shall be furnished suitable laser safety goggles which will protect for the specific wavelength of the laser and be of optical density (O.D.) adequate for the energy involved. Table E-2 lists the maximum power or energy density for which adequate protection is afforded by glasses of optical densities from 5 through 8. Output levels falling between lines in this table shall require the higher optical density.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 511
+  },
+  {
+    "chunk_id": "1926.102(c)(2)(ii)",
+    "section": "1926.102",
+    "paragraph": "(c)(2)(ii)",
+    "citation": "29 CFR 1926.102(c)(2)(ii)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(ii) All protective goggles shall bear a label identifying the following data:",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 78
+  },
+  {
+    "chunk_id": "1926.102(c)(2)(ii)(A)",
+    "section": "1926.102",
+    "paragraph": "(c)(2)(ii)(A)",
+    "citation": "29 CFR 1926.102(c)(2)(ii)(A)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(A) The laser wavelengths for which use is intended;",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 52
+  },
+  {
+    "chunk_id": "1926.102(c)(2)(ii)(B)",
+    "section": "1926.102",
+    "paragraph": "(c)(2)(ii)(B)",
+    "citation": "29 CFR 1926.102(c)(2)(ii)(B)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(B) The optical density of those wavelengths;",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 45
+  },
+  {
+    "chunk_id": "1926.102(c)(2)(ii)(C)",
+    "section": "1926.102",
+    "paragraph": "(c)(2)(ii)(C)",
+    "citation": "29 CFR 1926.102(c)(2)(ii)(C)",
+    "section_title": "Eye and face protection",
+    "subpart": "E",
+    "text": "(C) The visible light transmission.",
+    "topics": [
+      "goggles"
+    ],
+    "authority": "specific",
+    "char_count": 35
+  },
+  {
+    "chunk_id": "1926.201(a)",
+    "section": "1926.201",
+    "paragraph": "(a)",
+    "citation": "29 CFR 1926.201(a)",
+    "section_title": "Signaling",
+    "subpart": "G",
+    "text": "(a) Flaggers. Signaling by flaggers and the use of flaggers, including warning garments worn by flaggers, shall conform to Part 6 of the MUTCD (incorporated by reference, see \u00a7 1926.6).",
+    "topics": [
+      "vest"
+    ],
+    "authority": "narrow",
+    "char_count": 185
+  },
+  {
+    "chunk_id": "1926.201(b)",
+    "section": "1926.201",
+    "paragraph": "(b)",
+    "citation": "29 CFR 1926.201(b)",
+    "section_title": "Signaling",
+    "subpart": "G",
+    "text": "(b) Crane and hoist signals. Regulations for crane and hoist signaling will be found in applicable American National Standards Institute standards.",
+    "topics": [
+      "vest"
+    ],
+    "authority": "narrow",
+    "char_count": 147
+  }
+]

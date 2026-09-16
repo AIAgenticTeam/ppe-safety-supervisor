@@ -6,11 +6,15 @@ pillow>=10.0
 pyyaml>=6.0
 
 # ---- knowledge base + RAG (lane B) ----
-langchain>=0.3
-langchain-community>=0.3
 faiss-cpu>=1.8
 sentence-transformers>=3.0
-ragas>=0.2
+pyyaml>=6.0
+python-dotenv>=1.0
+# optional: LLM-judged retrieval metrics. Recall@k in kb/eval_retrieval.py needs neither.
+# ragas>=0.2
+# datasets>=3.0
+langchain>=0.3
+langchain-community>=0.3
 
 # ---- agents (lane C) ----
 langgraph>=0.2
