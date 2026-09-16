@@ -44,6 +44,7 @@ class Blocker(str, Enum):
     NO_CITATION = "no_citation"
     WRITE_UNCONFIRMED = "write_unconfirmed"
     MODEL_UNAVAILABLE = "model_unavailable"
+    SCHEMA_UNSUPPORTED = "schema_unsupported"
 
 
 ORDER = (Action.NO_ACTION, Action.LOG_ONLY, Action.WARNING,

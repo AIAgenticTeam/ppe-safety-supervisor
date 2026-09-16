@@ -44,6 +44,80 @@ OK = Verdict(True)
 # Entry gate
 # ---------------------------------------------------------------------------
 
+SUPPORTED_SCHEMA_MAJOR = "1"
+
+# Every nested path the agents and gates actually read. Checked for PRESENCE, not for a
+# truthy value -- an empty `ppe.present` is a normal event, a missing one is a different
+# schema wearing the same version number.
+REQUIRED_PATHS = (
+    ("event_id",), ("captured_at",), ("camera_id",), ("status",),
+    ("zone", "name"), ("zone", "required_ppe"),
+    ("ppe", "present"), ("ppe", "missing"), ("ppe", "indeterminate"),
+    ("confirmation", "confirmed"), ("confirmation", "frames_observed"),
+    ("confirmation", "frames_missing"),
+    ("subject", "detection_confidence"),
+    ("detector", "recall"),
+)
+
+_ABSENT = object()
+
+
+def _dig(event: dict, path: tuple):
+    node = event
+    for key in path:
+        if not isinstance(node, dict) or key not in node:
+            return _ABSENT
+        node = node[key]
+    return node
+
+
+def gate_event_is_well_formed(state: CaseState) -> Verdict:
+    """Check the fields exist, not just that the version number looks right.
+
+    `gate_schema_understood` only catches drift somebody declared. The likelier accident
+    is a field renamed or re-nested with the version left alone -- and that failure is
+    invisible, because every reader below uses .get() with a default. A renamed
+    `confirmation.confirmed` does not raise; it makes every finding look unconfirmed,
+    sends the lot to the review queue, and leaves the pipeline looking healthy while it
+    escalates nothing.
+
+    Presence, not truth: `ppe.present` being empty is an ordinary event. `ppe.present`
+    being absent means this is not the schema these agents read.
+    """
+    missing = [".".join(p) for p in REQUIRED_PATHS if _dig(state.event, p) is _ABSENT]
+    if missing:
+        return Verdict(False,
+                       "the event is missing fields the agents read: "
+                       + ", ".join(missing),
+                       Blocker.SCHEMA_UNSUPPORTED)
+    return OK
+
+
+def gate_schema_understood(state: CaseState) -> Verdict:
+    """Refuse an event whose shape these agents were not written against.
+
+    This one exists because the failure it prevents is silent. Every gate below reads
+    the event with .get() and a default, so a renamed or moved field does not raise --
+    it makes the finding look unconfirmed, routes it to review, and the system goes on
+    appearing to work while processing nothing. A pipeline that quietly stops
+    escalating is worse than one that stops.
+
+    Lane A owns the schema and will bump it (dropping severity_multiplier is a bump
+    already on the list). A minor bump is additive and safe; a major one means fields
+    this code reads may have moved, and guessing is not available to us.
+    """
+    version = str(state.event.get("schema_version") or "").strip()
+    if not version:
+        return Verdict(False, "the event carries no schema_version",
+                       Blocker.SCHEMA_UNSUPPORTED)
+    if version.split(".")[0] != SUPPORTED_SCHEMA_MAJOR:
+        return Verdict(False,
+                       f"event schema {version} is not understood by agents written "
+                       f"for {SUPPORTED_SCHEMA_MAJOR}.x",
+                       Blocker.SCHEMA_UNSUPPORTED)
+    return OK
+
+
 def gate_actionable(state: CaseState) -> Verdict:
     """Only a temporally confirmed violation may enter the agent layer.
 

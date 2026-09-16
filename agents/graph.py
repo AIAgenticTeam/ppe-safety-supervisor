@@ -41,6 +41,8 @@ from agents.adjudicator import adjudicate  # noqa: E402
 from agents.assessor import assess  # noqa: E402
 from agents.guardrails import (ENTRY_GATES, POST_ASSESSOR, POST_RECORDER,  # noqa: E402
                                gate_action_matches_the_score, gate_human_approval,
+                               gate_event_is_well_formed,
+                               gate_schema_understood,
                                gate_no_unsupported_pattern_claim,
                                gate_low_confidence_goes_to_a_human, run_gates)
 from agents.recorder import record  # noqa: E402
@@ -72,7 +74,7 @@ class GraphState(TypedDict, total=False):
 # Nodes
 # ---------------------------------------------------------------------------
 
-def _park(gs: GraphState, db, reason: str) -> GraphState:
+def _park(gs: GraphState, db, reason: str, outcome: str = "parked") -> GraphState:
     """End a case the agents could not finish -- but keep the finding.
 
     A parked case never reaches the Recorder, so without this the event exists only in
@@ -87,18 +89,33 @@ def _park(gs: GraphState, db, reason: str) -> GraphState:
         case.log("graph", "park", {}, "event kept, no decision")
     except Exception as exc:                    # noqa: BLE001
         case.log("graph", "park", {}, f"event NOT kept: {exc}")
-    return {**gs, "case": case, "outcome": "parked", "reason": reason}
+    return {**gs, "case": case, "outcome": outcome, "reason": reason}
 
 
-def node_intake(gs: GraphState) -> GraphState:
-    """Only a temporally confirmed violation enters the agent layer."""
-    case = gs["case"]
-    verdict = run_gates(case, ENTRY_GATES)
-    if not verdict:
-        case.log("graph", "intake", {}, f"rejected: {verdict.reason}")
-        return {**gs, "outcome": "review", "reason": verdict.reason}
-    case.log("graph", "intake", {}, "accepted")
-    return {**gs, "outcome": ""}
+def make_node_intake(db):
+    def node_intake(gs: GraphState) -> GraphState:
+        """Only a temporally confirmed violation enters the agent layer."""
+        case = gs["case"]
+
+        # Before anything reads a field: do we understand this event at all? An
+        # unrecognised schema is a system fault, not a safety judgement, so it raises
+        # an alert rather than joining the review queue where a human would read it
+        # as an ordinary uncertain finding.
+        for check in (gate_schema_understood, gate_event_is_well_formed):
+            understood = check(case)
+            if not understood:
+                case.block(Blocker.SCHEMA_UNSUPPORTED)
+                case.log("graph", "intake", {}, understood.reason)
+                return _park({**gs, "case": case}, db, understood.reason,
+                             outcome="alert")
+
+        verdict = run_gates(case, ENTRY_GATES)
+        if not verdict:
+            case.log("graph", "intake", {}, f"rejected: {verdict.reason}")
+            return {**gs, "outcome": "review", "reason": verdict.reason}
+        case.log("graph", "intake", {}, "accepted")
+        return {**gs, "outcome": ""}
+    return node_intake
 
 
 def make_node_assess(db, client, model):
@@ -186,7 +203,7 @@ def build_graph(db, client=None, model: str = "gpt-4o-mini",
     from langgraph.graph import END, START, StateGraph
 
     g = StateGraph(GraphState)
-    g.add_node("intake", node_intake)
+    g.add_node("intake", make_node_intake(db))
     g.add_node("assess", make_node_assess(db, client, model))
     g.add_node("adjudicate", make_node_adjudicate(db, client, model))
     g.add_node("record", make_node_record(db, bound_by))

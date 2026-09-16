@@ -29,10 +29,31 @@ _CLAUSE_MAP: ClauseMap | None = None
 _RETRIEVER = None
 
 
-def clause_map() -> ClauseMap:
+class ClauseMapInvalid(RuntimeError):
+    """clauses.yaml and zones.json disagree. Nothing should run on that."""
+
+
+def clause_map(validate: bool = True) -> ClauseMap:
+    """The clause map, checked against zones.json the first time it is loaded.
+
+    The check has to happen here rather than in a test, because the thing it catches is
+    a config edit: someone adds a zone to zones.json, forgets the matching weight in
+    clauses.yaml, and `score(strict=True)` raises on the first event that touches that
+    zone. That is a crash in the middle of a case, during a demo, rather than a refusal
+    to start -- which is the same information delivered at the worst possible time.
+
+    Validation runs once, on first load, and costs a YAML parse.
+    """
     global _CLAUSE_MAP
     if _CLAUSE_MAP is None:
-        _CLAUSE_MAP = ClauseMap.load()
+        candidate = ClauseMap.load()
+        if validate:
+            problems = candidate.validate()
+            if problems:
+                joined = "\n  - ".join(problems)
+                raise ClauseMapInvalid(
+                    f"clauses.yaml does not agree with zones.json:\n  - {joined}")
+        _CLAUSE_MAP = candidate
     return _CLAUSE_MAP
 
 
