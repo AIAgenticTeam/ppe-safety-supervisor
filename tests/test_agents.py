@@ -379,3 +379,78 @@ def test_the_trace_records_every_tool_each_agent_chose(tmp_path):
     out = run_case(confirmed_event(), db, client=StubClient(_full_script()))
     actors = {entry.agent for entry in out["case"].trace}
     assert {"graph", "assessor", "adjudicator", "recorder"} <= actors
+
+
+# ------------------------------------------- the score is not the model's to supply
+
+def test_a_model_supplied_prior_count_is_ignored(tmp_path):
+    """The bug this was written for: the adjudicator read "prior_violations: 2" and
+    then asked for a score with priors=0, producing a warning-band number underneath
+    an escalation. The tool now reads the confirmed count itself."""
+    db = EventStore(tmp_path / "t.db")
+    db.add_worker(Worker("W-1", "Someone"))
+    for i in range(2):
+        prior = confirmed_event(worker="W-1")
+        prior["event_id"] = f"prior_{i}"
+        db.record_event(prior)
+        db.attach_identity(f"prior_{i}", "W-1", "supervisor:test")
+
+    state = CaseState(event=confirmed_event(worker="W-1"))
+    state.draft = Draft(summary="x", citations=[Citation("1926.100", "Head protection")])
+    # The script asks for priors=0 -- exactly what the real model did.
+    state = adjudicate(state, db=db,
+                       client=StubClient(_adjudicator_script("warning", priors=0,
+                                                             worker="W-1")))
+    assert state.decision.severity.total == 9, "the repeat penalty must be in the score"
+    assert state.decision.prior_violations == 2
+
+
+def test_scoring_before_looking_anyone_up_still_counts_priors(tmp_path):
+    """Tool order is the agent's to choose, so the score must not depend on it."""
+    db = EventStore(tmp_path / "t.db")
+    db.add_worker(Worker("W-1", "Someone"))
+    prior = confirmed_event(worker="W-1")
+    prior["event_id"] = "prior_0"
+    db.record_event(prior)
+    db.attach_identity("prior_0", "W-1", "supervisor:test")
+
+    state = CaseState(event=confirmed_event(worker="W-1"))
+    state.draft = Draft(summary="x", citations=[Citation("1926.100", "Head protection")])
+    state = adjudicate(state, db=db, client=StubClient([
+        [StubCall("final_severity", {})],          # scored first, no history yet
+        [StubCall("submit_decision", {"action": "escalation", "rationale": "r",
+                                      "draft_body": "b"})],
+    ]))
+    assert state.decision.severity.total == 7      # 5 baseline + one prior
+
+
+def test_log_only_is_a_real_action(tmp_path):
+    """It is in the tool schema and it is the default, so an Action that cannot
+    represent it crashes the graph on an ordinary decision."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db,
+                   client=StubClient(_full_script("log_only")))
+    assert out["outcome"] == "done"
+    assert out["case"].decision.action == Action.LOG_ONLY
+    assert not out["case"].decision.requires_approval
+
+
+def test_an_action_harsher_than_the_score_needs_a_human(tmp_path):
+    """Arguing a case down is the agent's to do. Arguing one up is a human's."""
+    db = EventStore(tmp_path / "t.db")
+    event = confirmed_event(["gloves"], zone="walkway", camera="d_view02_test")
+    out = run_case(event, db, client=StubClient(
+        [[StubCall("submit_draft", {
+            "summary": "Gloves were absent; hand protection rests on site policy.",
+            "clause_ids": ["1926.95"]})]]
+        + _adjudicator_script("stop_work")))
+    assert out["case"].decision.requires_approval
+    assert any(s.tool == "gate_action_matches_the_score" for s in out["case"].trace)
+
+
+def test_a_gentler_action_than_the_score_passes_freely(tmp_path):
+    """The departure the agent is allowed to make on its own."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db,
+                   client=StubClient(_full_script("log_only")))
+    assert not any(s.tool == "gate_action_matches_the_score" for s in out["case"].trace)

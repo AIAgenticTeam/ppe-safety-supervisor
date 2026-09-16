@@ -221,3 +221,63 @@ The Adjudicator reads history and recommends action against a named person. The 
 mutates shared state. Splitting them puts the guardrails on the edges *between* agents,
 where they can actually block — a single agent with five tools has no seam to put a human
 approval gate into.
+
+## Where determinism stops and autonomy starts
+
+The line is not drawn by what is easy to automate. It is drawn by asking **what does
+being wrong cost, and who could tell?**
+
+Deterministic, because a wrong answer is expensive and invisible:
+
+| Decision | Owner | Why not the model |
+|---|---|---|
+| Which clause governs a missing item | `kb/clauses.yaml` | A hallucinated citation reads exactly like a real one. Nobody on the review panel will check 29 CFR by hand. |
+| What the severity number is | `ClauseMap.score()` | It has to be the same number every time, or Macro-F1 against human labels means nothing. |
+| How many priors a worker has | `app/db.py` | Counting is not judgement, and an error here silently turns a third offence into a first. |
+| What gets written, and whether it landed | `agents/recorder.py` | An LLM that forgets to call `commit_record` loses the history the next escalation depends on. |
+
+Agentic, because judgement is the actual task:
+
+| Decision | Owner | Why not a rule |
+|---|---|---|
+| Which tools this finding needs, in what order | Assessor | Some cases need one clause, some need three and the text of each. A fixed sequence would run every lookup on every event and still handle the odd one badly. |
+| How to describe what happened | Assessor | One neutral sentence from structured facts is exactly what language models are for. |
+| What response is proportionate | Adjudicator | The band table gives a default; the edges are where a human would think. |
+| When it cannot tell | Adjudicator | Recognising that identity was never bound, and saying so, is a judgement a rule cannot make on its behalf. |
+
+### The failure that set the boundary
+
+An early run had the Adjudicator call `get_worker_history`, read `prior_violations: 2`,
+and then call `final_severity` with `priors=0`. It still chose escalation -- it argued
+the case up in prose -- so the *action* was right. The *number* recorded against it was
+3.0, a warning-band score sitting underneath an escalation.
+
+The tool was deterministic. Its inputs were not. A deterministic function whose arguments
+the model supplies is only as reliable as the model's willingness to retype a figure it
+was just handed.
+
+So `final_severity` now takes **no arguments**. It reads the zone, the missing items and
+the confirmed prior count itself, fetching history first if the agent scored before
+looking anyone up. The agent still decides whether to score and what to do with the
+answer; it no longer decides what goes in.
+
+`gate_action_matches_the_score` was added for the same reason. An action gentler than the
+band is the agent's to make. An action harsher than the band may well be correct, but it
+is the model deciding someone deserves more than the auditable rubric says -- so it goes
+out only with a human signature. That gate would have caught the bug above even on the
+run where the action happened to be right, because the mismatch is visible in the shape
+of the decision, not just in the outcome.
+
+### Why the guardrails sit on the edges
+
+Every gate checks an **output**, never a process. That is what makes the autonomy safe
+rather than decorative:
+
+- An Assessor that skips `lookup_clause` produces a draft with no citation, and
+  `gate_citation_present` refuses it.
+- One that cites general industry gets caught by `gate_citations_are_construction`.
+- One that presents gloves as a regulatory requirement fails
+  `gate_site_policy_is_labelled`.
+
+Forcing the tool call would have been the weaker design. An agent made to call a tool can
+still ignore what came back; an agent whose output is checked cannot.

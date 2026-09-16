@@ -40,11 +40,25 @@ sys.path.insert(0, str(ROOT))
 from agents.adjudicator import adjudicate  # noqa: E402
 from agents.assessor import assess  # noqa: E402
 from agents.guardrails import (ENTRY_GATES, POST_ASSESSOR, POST_RECORDER,  # noqa: E402
-                               gate_human_approval, gate_low_confidence_goes_to_a_human,
-                               run_gates)
+                               gate_action_matches_the_score, gate_human_approval,
+                               gate_low_confidence_goes_to_a_human, run_gates)
 from agents.recorder import record  # noqa: E402
 from agents.state import Blocker, CaseState  # noqa: E402
-from agents.tools import assess_confidence  # noqa: E402
+from agents.tools import assess_confidence, final_severity  # noqa: E402
+
+
+def final_severity_for(case):
+    """Re-score the case from the event alone, to compare against what was decided."""
+    try:
+        event = case.event
+        return final_severity(
+            event.get("zone", {}).get("name") or "default",
+            event.get("ppe", {}).get("missing", []),
+            case.decision.prior_violations if case.decision else 0,
+            event.get("camera_id"),
+            required=event.get("zone", {}).get("required_ppe"))
+    except Exception:
+        return None
 
 
 class GraphState(TypedDict, total=False):
@@ -101,6 +115,17 @@ def make_node_adjudicate(db, client, model):
             case.decision.requires_approval = True
             case.log("graph", "gate_low_confidence", {"score": confidence.score},
                      weak.reason)
+
+        # An action harsher than the rubric supports is not refused -- it may well be
+        # the right call -- but it never goes out without someone signing for it.
+        severity = final_severity_for(case)
+        if severity is not None:
+            fits = gate_action_matches_the_score(case, severity)
+            if not fits:
+                case.block(Blocker.HUMAN_APPROVAL)
+                case.decision.requires_approval = True
+                case.log("graph", "gate_action_matches_the_score",
+                         {"band": severity.band}, fits.reason)
         return {**gs, "case": case, "outcome": ""}
     return node_adjudicate
 

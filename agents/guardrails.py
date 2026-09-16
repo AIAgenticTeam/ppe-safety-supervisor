@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from agents.state import Action, Blocker, CaseState  # noqa: E402
+from agents.state import BAND_ACTION, Action, Blocker, CaseState  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -162,6 +162,33 @@ def gate_escalation_needs_priors(state: CaseState, history) -> Verdict:
         return Verdict(False,
                        "claims prior violations but identity was never bound",
                        Blocker.WORKER_IDENTITY)
+    return OK
+
+
+def gate_action_matches_the_score(state: CaseState, severity) -> Verdict:
+    """An action may be gentler than the score, never harsher, without a human.
+
+    The Adjudicator is allowed to argue a case down -- weak evidence, a zone that reads
+    worse on paper than in life. Arguing one UP is different: it is the model deciding
+    someone deserves more than the rubric says, and the rubric is the part that is
+    auditable.
+
+    This is the gate that catches a scoring input going astray. An agent that reads
+    "2 prior violations" and then scores the case as a first offence produces exactly
+    this shape -- a warning-band number under an escalation -- and the mismatch is
+    visible here even when the action itself happens to be right.
+    """
+    d = state.decision
+    if d is None:
+        return Verdict(False, "no decision")
+    expected = BAND_ACTION.get(getattr(severity, "band", ""), None)
+    if expected is None:
+        return OK
+    if d.action.rank > expected.rank:
+        return Verdict(False,
+                       f"{d.action.value} is harsher than the score supports "
+                       f"({severity.final} = {severity.band})",
+                       Blocker.HUMAN_APPROVAL)
     return OK
 
 

@@ -42,6 +42,11 @@ Use the tools to get the score, the history and the evidence strength. Then choo
 action. You may depart from the band the score suggests, but you must say why in your
 rationale -- and you may only depart downward on evidence, never upward on suspicion.
 
+final_severity already accounts for prior violations; it reads the confirmed count
+itself. If you believe a case deserves more than the band it returns, check that you
+called get_worker_history first -- the repeat penalty is in that number, not something
+you add on top of it.
+
 Hard rules:
 - If get_worker_history returns resolved=false, identity was never confirmed. You do NOT
   know there are no priors; you know you cannot see them. Never claim a first offence on
@@ -68,13 +73,11 @@ TOOL_SCHEMAS = [
         }}}},
     {"type": "function", "function": {
         "name": "final_severity",
-        "description": "Severity from zone weights plus the repeat penalty. Deterministic.",
-        "parameters": {"type": "object", "properties": {
-            "zone": {"type": "string"},
-            "missing": {"type": "array", "items": {"type": "string"}},
-            "priors": {"type": "integer"},
-            "camera": {"type": "string"},
-        }, "required": ["zone", "missing", "priors"]}}},
+        "description": ("Severity for this finding: the zone's item weights plus the "
+                        "repeat penalty. Takes no arguments -- it reads the zone, the "
+                        "missing items and the confirmed prior count itself, so the "
+                        "number cannot be affected by how you ask."),
+        "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "assess_confidence",
         "description": ("How trustworthy the finding is: detector recall, how many frames "
@@ -106,12 +109,29 @@ def _dispatch(name, args, facts, event, db, captured):
                                "prior_violations": h.prior_violations,
                                "note": h.note})
         if name == "final_severity":
-            s = final_severity(args["zone"], args["missing"], args["priors"],
-                               args.get("camera") or event.get("camera_id"),
+            # Every input is authoritative, none of it is the model's to restate.
+            # It once read "prior_violations: 2" and then asked for a score with
+            # priors=0, which produced a warning-band number attached to an
+            # escalation -- the right call recorded against the wrong figure.
+            # The model still decides WHETHER to score and what to do about the
+            # answer; it no longer decides what goes in.
+            hist = captured.get("history")
+            if hist is None:
+                # Scored before looking anyone up. Fetch it now rather than
+                # defaulting to zero, which would read as a clean record.
+                hist = get_worker_history(facts.get("worker_ref"), db=db)
+                captured["history"] = hist
+            priors = hist.prior_violations if hist.resolved else 0
+            s = final_severity(facts.get("zone_name") or "default",
+                               facts.get("missing", []), priors,
+                               event.get("camera_id"),
                                required=facts.get("required_ppe"))
             captured["severity"] = s
+            note = ("prior count is unconfirmed and was scored as zero; do not "
+                    "read this as a clean record"
+                    if not hist.resolved else f"includes {priors} confirmed prior(s)")
             return json.dumps({"baseline": s.baseline, "final": s.final,
-                               "band": s.band, "explain": s.explain()})
+                               "band": s.band, "explain": s.explain(), "note": note})
         if name == "assess_confidence":
             c = assess_confidence(event)
             captured["confidence"] = c

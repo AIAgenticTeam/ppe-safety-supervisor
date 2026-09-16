@@ -25,10 +25,17 @@ SCHEMA_VERSION = "1.0"
 class Action(str, Enum):
     """What the Adjudicator recommends. Nothing here is ever executed automatically."""
 
-    NO_ACTION = "no_action"          # logged, nothing issued
-    WARNING = "warning"              # draft email to the worker
-    ESCALATION = "escalation"        # draft letter to the supervisor
+    NO_ACTION = "no_action"          # nothing issued, nothing recorded as a finding
+    LOG_ONLY = "log_only"            # recorded, no notice raised
+    WARNING = "warning"              # draft note for the supervisor to have a word
+    ESCALATION = "escalation"        # formal; the supervisor must respond
     STOP_WORK = "stop_work"          # immediate halt; always needs human approval
+
+    @property
+    def rank(self) -> int:
+        """How severe, as an ordering. Lets a guardrail ask whether a chosen action
+        outruns the score that was supposed to justify it."""
+        return ORDER.index(self)
 
 
 class Blocker(str, Enum):
@@ -36,6 +43,14 @@ class Blocker(str, Enum):
     WORKER_IDENTITY = "worker_identity"
     NO_CITATION = "no_citation"
     WRITE_UNCONFIRMED = "write_unconfirmed"
+
+
+ORDER = (Action.NO_ACTION, Action.LOG_ONLY, Action.WARNING,
+         Action.ESCALATION, Action.STOP_WORK)
+
+BAND_ACTION = {"compliant": Action.NO_ACTION, "log_only": Action.LOG_ONLY,
+               "warning": Action.WARNING, "escalation": Action.ESCALATION,
+               "stop_work": Action.STOP_WORK}
 
 
 @dataclass
