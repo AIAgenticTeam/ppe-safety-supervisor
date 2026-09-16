@@ -110,9 +110,21 @@ def test_missing_helmet_outweighs_missing_vest(cm):
 
 
 def test_zone_weights_differ(cm):
-    """Per-zone weights are what carry context, now that severity_multiplier is gone."""
-    assert (cm.score(["gloves"], "grinding_station").baseline
-            > cm.score(["gloves"], "work_area").baseline)
+    """Per-zone weights are what carry context, now that severity_multiplier is gone.
+
+    Weights are keyed by camera/zone, so the camera must be passed -- a bare zone name
+    falls back to the defaults and the distinction disappears.
+    """
+    assert (cm.score(["gloves"], "grinding_station", camera="cam_3").baseline
+            > cm.score(["gloves"], "work_area", camera="d_view02").baseline)
+
+
+def test_bare_zone_name_falls_back_to_default(cm):
+    """Documented behaviour, not an accident: without a camera there is no way to know
+    which site's 'walkway' is meant, so the defaults apply. Production always has a
+    camera_id on the event, and check_against_zones() guarantees every real zone has a
+    scoped entry."""
+    assert cm.weights_for("grinding_station") == cm.weights_for("nonexistent_zone")
 
 
 def test_priors_escalate(cm):
@@ -144,3 +156,52 @@ def test_score_is_reproducible(cm):
 def test_explain_is_human_readable(cm):
     text = cm.score(["helmet", "vest"], "walkway", priors=2).explain()
     assert "helmet 5" in text and "vest 2" in text and "->" in text
+
+
+# --------------------------------------------------- cross-file agreement (item 1 & 2)
+
+def test_zones_and_clauses_agree(cm):
+    """zones.json and clauses.yaml each hold half of what a zone requires.
+
+    The dangerous drift is a required item with no weight: it scores zero, the violation
+    is still reported, and it never escalates -- with nothing in the output looking
+    wrong. This is the test that keeps the two files honest.
+    """
+    problems = cm.check_against_zones()
+    assert problems == [], "\n  " + "\n  ".join(problems)
+
+
+def test_every_zone_has_camera_scoped_weights(cm):
+    """A bare zone name is shared between cameras. Two sites can each have a 'walkway'
+    with different requirements, and a bare key would silently give them one table."""
+    import json
+    from pathlib import Path
+
+    raw = json.loads((ROOT / "zones.json").read_text(encoding="utf-8"))
+    for cam_id, cam in raw["cameras"].items():
+        for zone in cam["zones"]:
+            key = f"{cam_id}/{zone['name']}"
+            assert cm.weights_for(zone["name"], cam_id) == cm.weights_for(key.split("/")[1], cam_id)
+            assert set(cm.weights_for(zone["name"], cam_id)) == set(zone["required_ppe"]), (
+                f"{key} weights do not match its required_ppe")
+
+
+def test_same_zone_name_on_different_cameras_can_differ(cm):
+    """cam_3/walkway requires helmet only; d_view02/walkway also requires a vest.
+    Before camera scoping they shared one weight table."""
+    cam3 = cm.weights_for("walkway", "cam_3")
+    dview = cm.weights_for("walkway", "d_view02")
+    assert cam3 != dview, "camera scoping is not taking effect"
+    assert "vest" in dview and "vest" not in cam3
+
+
+def test_scoring_an_unweighted_required_item_raises(cm):
+    """Fail loudly rather than score zero."""
+    with pytest.raises(ValueError, match="no severity weight"):
+        cm.score(["boots"], "walkway", camera="cam_3", required=["helmet", "boots"])
+
+
+def test_strict_can_be_disabled_for_exploration(cm):
+    """The guard is on by default; ad-hoc scoring may opt out."""
+    result = cm.score(["boots"], "walkway", camera="cam_3", strict=False)
+    assert result.baseline == 0            # still zero, but now it was a deliberate choice

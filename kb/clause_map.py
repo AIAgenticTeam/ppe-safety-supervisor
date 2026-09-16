@@ -142,18 +142,47 @@ class ClauseMap:
 
     # ---- severity -------------------------------------------------------
 
-    def weights_for(self, zone: str) -> dict[str, int]:
+    def weights_for(self, zone: str, camera: str | None = None) -> dict[str, int]:
+        """Weights for a zone, preferring a camera-scoped entry over a bare name.
+
+        Zone names are only unique within a camera -- two sites can each have a
+        "walkway" with different requirements -- so a bare name silently shares one
+        weight table between them. `camera/zone` keys take precedence where present.
+        """
+        if camera:
+            scoped = self._weights.get(f"{camera}/{zone}")
+            if scoped is not None:
+                return dict(scoped)
         return dict(self._weights.get(zone, self._weights["default"]))
 
-    def score(self, missing: list[str], zone: str = "default",
-              priors: int = 0) -> SeverityResult:
+    def score(self, missing: list[str], zone: str = "default", priors: int = 0,
+              camera: str | None = None, required: list[str] | None = None,
+              strict: bool = True) -> SeverityResult:
         """Sum the weights of MISSING items.
 
         Deliberately not zone-total-minus-missing: that makes the threshold mean
         something different in every zone, and any zone whose total falls below it
         reports a fully compliant worker as severe.
+
+        `required` is the zone's requirement list from zones.json. Passing it turns on
+        the check that every required item actually has a weight -- without it, an
+        unweighted item scores zero, the violation is reported, and it never escalates.
+        Nothing looks wrong; the number is just quietly too low. That is the failure
+        this guard exists to make loud.
         """
-        weights = self.weights_for(zone)
+        weights = self.weights_for(zone, camera)
+
+        if strict:
+            unweighted = [i for i in (required or missing) if i not in weights]
+            if unweighted:
+                where = f"{camera}/{zone}" if camera else zone
+                raise ValueError(
+                    f"zone {where!r} requires {unweighted} but kb/clauses.yaml gives "
+                    f"{'it' if len(unweighted) == 1 else 'them'} no severity weight. "
+                    f"An unweighted item scores 0 and can never escalate. "
+                    f"Add {'it' if len(unweighted) == 1 else 'them'} to severity_weights."
+                )
+
         baseline = sum(weights.get(i, 0) for i in missing)
         final = baseline + self._per_prior * priors
         return SeverityResult(
@@ -169,6 +198,43 @@ class ClauseMap:
         return "stop_work"
 
     # ---- self-check -----------------------------------------------------
+
+    def check_against_zones(self, zones_path: str | Path = ROOT / "zones.json") -> list[str]:
+        """Do zones.json and this file agree about every zone?
+
+        They each hold half the truth -- zones.json says what a zone requires, this file
+        says what each item is worth -- and they can drift apart silently. The dangerous
+        direction is a required item with no weight: it scores zero, the violation is
+        reported, and it never escalates while nothing looks wrong.
+        """
+        if not Path(zones_path).exists():
+            return []
+
+        import json
+
+        problems: list[str] = []
+        raw = json.loads(Path(zones_path).read_text(encoding="utf-8"))
+        for cam_id, cam in raw.get("cameras", {}).items():
+            for zone in cam.get("zones", []):
+                required = set(zone.get("required_ppe", []))
+                key = f"{cam_id}/{zone['name']}"
+                weights = set(self._weights.get(key, {}))
+
+                if key not in self._weights:
+                    problems.append(
+                        f"{key}: no severity weights -- falls back to a bare zone name "
+                        f"or the default, which may not match what this zone requires")
+                    continue
+                for item in sorted(required - weights):
+                    problems.append(
+                        f"{key}: requires {item!r} but it has no weight -- it would "
+                        f"score 0 and never escalate")
+                for item in sorted(weights - required):
+                    problems.append(
+                        f"{key}: weights {item!r} but the zone does not require it")
+                for item in sorted(required - set(self._items)):
+                    problems.append(f"{key}: requires {item!r} but no clause covers it")
+        return problems
 
     def validate(self) -> list[str]:
         """Problems that would make a notice cite something wrong. Empty means sane."""
@@ -208,6 +274,8 @@ class ClauseMap:
         for (_, hi), (lo, _) in zip(edges, edges[1:]):
             if lo != hi + 1:
                 problems.append(f"band gap or overlap between {hi} and {lo}")
+
+        problems.extend(self.check_against_zones())
 
         # every clause cited by an item should be reachable and used
         used = {r["clause"] for r in self._items.values()}

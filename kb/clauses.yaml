@@ -25,7 +25,8 @@ meta:
 
 # ---------------------------------------------------------------------------
 # Clauses referenced by this system. `authority` distinguishes a clause that
-# squarely covers the item from one applied through a general duty.
+# squarely covers the item from one applied through a general duty. Retrieval
+# also uses it to rank a specific provision above a general one.
 # ---------------------------------------------------------------------------
 clauses:
   "1926.100":
@@ -166,6 +167,18 @@ zone_overrides:
 # These are a POLICY INPUT set by the site safety officer, not something the system
 # derived. Severity sums the weights of MISSING items; zone totals are irrelevant.
 # See docs/SEVERITY_AND_IDENTITY.md.
+#
+# KEYED BY "camera/zone", NOT BY ZONE NAME. Zone names are only unique within a
+# camera -- two sites can each have a "walkway" with different requirements -- so a
+# bare name would silently share one weight table between them.
+#
+# Each entry must list EXACTLY the items its zone requires in zones.json. An item
+# required but not weighted scores zero: the violation is reported and then never
+# escalates, with nothing in the output looking wrong. ClauseMap.score() raises
+# rather than allow that, and tests/test_clause_map.py asserts the two files agree.
+#
+# Values are hazard-scaled: eye protection is worth more at an abrasive wheel than on
+# a walkway, because that is where the hazard 1926.102 names actually exists.
 # ---------------------------------------------------------------------------
 severity_weights:
   default:
@@ -175,31 +188,36 @@ severity_weights:
     boots: 3
     vest: 2
 
-  walkway:
+  # --- cam_3 (EXAMPLE camera, underpins the fixtures) ---
+  cam_3/walkway:
     helmet: 5
-    vest: 2
-
-  work_area:
-    helmet: 5
-    vest: 2
-    gloves: 3
-
-  grinding_station:
+  cam_3/grinding_station:
     helmet: 5
     goggles: 4
     gloves: 4
-    vest: 2
-
-  welding_bay:
+  cam_3/welding_bay:
     helmet: 5
     goggles: 4
     gloves: 4
     vest: 3
-
-  loading_dock:
+  cam_3/loading_dock:
     helmet: 5
     vest: 3
     boots: 4
+
+  # --- cam_1 (EXAMPLE camera) ---
+  cam_1/assembly_line:
+    helmet: 5
+    gloves: 3
+
+  # --- d_view02 (the real CCTV segment) ---
+  d_view02/walkway:
+    helmet: 5
+    vest: 2
+  d_view02/work_area:
+    helmet: 5
+    vest: 2
+    gloves: 3
 
 bands:
   compliant: [0, 0]

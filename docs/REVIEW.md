@@ -5,7 +5,7 @@ item is verified, not suspected. Tick them off as they are fixed.
 
 ---
 
-## 1. Two sources of truth for what a zone requires — CRITICAL
+## 1. Two sources of truth for what a zone requires — FIXED 16 Sep
 
 `zones.json` declares `required_ppe` per zone. `kb/clauses.yaml` declares
 `severity_weights` per zone. Nothing keeps them in agreement, and the failure is silent
@@ -20,13 +20,14 @@ scores zero is invisible to escalation — the system reports the violation but 
 as costing nothing. Today five weights exist for items that are not required (harmless);
 nothing prevents the reverse.
 
-**Fix:** derive one from the other. Either `required_ppe` becomes the keys of the weight
-table, or scoring raises on an unweighted required item rather than silently using zero.
-A test asserting the two files agree is the minimum.
+**Fixed.** `ClauseMap.score()` now raises on an unweighted required item instead of
+scoring it zero, and `check_against_zones()` compares the two files directly. Both run in
+`validate()` and in `tests/test_clause_map.py::test_zones_and_clauses_agree`, so the drift
+cannot return unnoticed.
 
 ---
 
-## 2. Zone names are global in one file, per-camera in the other — CRITICAL
+## 2. Zone names are global in one file, per-camera in the other — FIXED 16 Sep
 
 `ClauseMap.weights_for("walkway")` takes a bare zone name, but zone names only exist
 inside a camera in `zones.json`:
@@ -41,8 +42,10 @@ Two different zones share one weight table because they happen to share a name. 
 benign now only because the numbers coincide. A second site with its own "walkway"
 silently inherits these weights.
 
-**Fix:** key weights by `camera_id/zone_name`, or require globally unique zone names and
-enforce it in `zones.py::validate`.
+**Fixed.** Weights are keyed `camera/zone`. `cam_3/walkway` and `d_view02/walkway` now
+hold different tables, and a test asserts they differ. A bare zone name still resolves to
+the defaults -- documented, and unreachable in production because every event carries a
+`camera_id`.
 
 ---
 
