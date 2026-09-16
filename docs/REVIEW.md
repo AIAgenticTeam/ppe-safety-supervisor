@@ -122,6 +122,25 @@ event's own id.
 
 ---
 
+## 5b. Stills sharing a timestamp overwrote each other — FIXED 16 Sep
+
+Found by running the real detector over a folder of frames, not by reading the code.
+The pipeline reported `4 frames -> 3 events` and left **one** file on disk.
+
+Stills take their timestamp from the file mtime and person ids restart at 0 on every
+frame, so `make_event_id` produced the same id four times. Events and evidence are both
+saved under the id, so three findings were overwritten in silence. Nothing raised, and
+the summary line still said three.
+
+**Fixed:** `make_event_id` takes an optional `source`, and the stills path passes the
+frame stem. Video is untouched -- ByteTrack ids are already unique within a clip, and a
+test pins that its id shape has not drifted.
+
+Worth noting how it was found: this is the class of bug that a stubbed test will not
+catch, because the stub controls the inputs that collided.
+
+---
+
 ## 6. `severity_multiplier` is a zombie — DOC/CODE DRIFT
 
 `docs/SEVERITY_AND_IDENTITY.md` says it was dropped as a double count. It is still:

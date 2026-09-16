@@ -154,8 +154,22 @@ class ViolationEvent:
         )
 
 
-def make_event_id(camera_id: str, track_id: int, when: datetime) -> str:
-    return f"evt_{when.strftime('%Y%m%dT%H%M%S')}_{camera_id}_t{track_id}"
+def make_event_id(camera_id: str, track_id: int, when: datetime,
+                  source: str | None = None) -> str:
+    """A stable id for one finding. Event JSON and evidence files are named from it, so
+    a collision is not a cosmetic problem -- the second event overwrites the first.
+
+    `source` distinguishes findings that share a timestamp and a track id. The stills
+    path needs it: a folder of frames extracted in the same second all carry the same
+    mtime, and person ids restart at 0 on every frame, so without it four frames
+    collapse into one event and three findings are lost with nothing reporting it.
+    Video does not need it -- ByteTrack ids are unique within a clip.
+    """
+    stem = f"evt_{when.strftime('%Y%m%dT%H%M%S')}_{camera_id}"
+    if source:
+        safe = "".join(c if c.isalnum() or c in "-" else "_" for c in source)
+        stem = f"{stem}_{safe}"
+    return f"{stem}_t{track_id}"
 
 
 def build_event(assessment, zone, camera_id: str, track_id: int,

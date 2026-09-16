@@ -60,7 +60,13 @@ def process_image(model, image_path: Path, zmap: ZoneMap, camera_id: str,
         # The id is minted before anything is written, because the evidence filenames
         # are built from it. Deriving it twice and trusting the two to agree kept the
         # event pointing at files only by coincidence.
-        event_id = make_event_id(camera_id, person.person_id, when)
+        #
+        # The frame stem is part of it because stills have no other discriminator: a
+        # folder of frames extracted in one second shares an mtime, and person ids
+        # restart at 0 on each frame. Without it, four frames produce one event and
+        # the other three are overwritten in silence.
+        event_id = make_event_id(camera_id, person.person_id, when,
+                                 source=image_path.stem)
 
         evidence = Evidence()
         if save_crops:

@@ -121,3 +121,76 @@ def test_a_compliant_still_still_gets_evidence_without_an_allegation_label(run):
     events, _ = run(missing=())
     assert events[0].status == "compliant"
     assert Path(events[0].evidence.crop_path).exists()
+
+
+# ----------------------------------------- ids must survive a folder of stills
+
+def test_frames_sharing_a_timestamp_do_not_collapse_into_one_event(
+        monkeypatch, tmp_path):
+    """Found by running the real model over a folder of extracted frames.
+
+    Stills take their timestamp from the file's mtime, and person ids restart at 0 on
+    every frame. Four frames written in the same second therefore produced four
+    identical event ids -- and since events and evidence are both saved under the id,
+    three of them were overwritten. The pipeline cheerfully reported "3 events" while
+    one file sat on disk.
+
+    Nothing raised. That is the whole problem with it.
+    """
+    import os
+
+    img = np.full((720, 1280, 3), 40, dtype=np.uint8)
+    img[300:700, 500:700] = (180, 160, 140)
+
+    frames = []
+    for i in range(4):
+        path = tmp_path / f"frame_{i:02d}.jpg"
+        cv2.imwrite(str(path), img)
+        os.utime(path, (1_760_000_000, 1_760_000_000))   # identical mtime
+        frames.append(path)
+
+    monkeypatch.setattr(pipeline, "assess_detections",
+                        lambda *a, **k: ([FakeAssessment(("helmet",))], []))
+    from ppe_compliance import Policy
+    from zones import ZoneMap
+
+    out = tmp_path / "out"
+    ids, evidence_paths = [], []
+    for path in frames:
+        for event in pipeline.process_image(
+                FakeModel(), path, ZoneMap.load(ROOT / "zones.json"), "cam_3",
+                Policy(), out):
+            ids.append(event.event_id)
+            evidence_paths.append(event.evidence.crop_path)
+
+    assert len(set(ids)) == len(ids), f"ids collided: {ids}"
+    assert len(set(evidence_paths)) == len(evidence_paths), "evidence overwrote itself"
+    for path in evidence_paths:
+        assert Path(path).exists()
+
+
+def test_the_source_stem_appears_in_a_stills_event_id(monkeypatch, tmp_path):
+    """Traceability: a reviewer holding an event should be able to find the frame."""
+    img = np.full((720, 1280, 3), 40, dtype=np.uint8)
+    path = tmp_path / "cam3_0930.jpg"
+    cv2.imwrite(str(path), img)
+
+    monkeypatch.setattr(pipeline, "assess_detections",
+                        lambda *a, **k: ([FakeAssessment(("helmet",))], []))
+    from ppe_compliance import Policy
+    from zones import ZoneMap
+
+    events = pipeline.process_image(FakeModel(), path,
+                                    ZoneMap.load(ROOT / "zones.json"), "cam_3",
+                                    Policy(), tmp_path / "out")
+    assert "cam3_0930" in events[0].event_id
+
+
+def test_video_ids_are_unchanged_by_the_stills_discriminator():
+    """ByteTrack ids are unique within a clip, so video needs no source component and
+    its id shape must not drift."""
+    from datetime import datetime
+
+    from events import RIYADH, make_event_id
+    when = datetime(2026, 9, 16, 10, 15, tzinfo=RIYADH)
+    assert make_event_id("cam_3", 7, when) == "evt_20260916T101500_cam_3_t7"
