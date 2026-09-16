@@ -277,25 +277,6 @@ def assess_image(image_path: str | Path, weights: str | Path, policy: Policy | N
     )
 
 
-def save_evidence(image_path: str | Path, person: PersonAssessment, out_dir: str | Path,
-                  pad: float = 0.15) -> str:
-    """Crop the person out of the frame so a reviewer can check the claim themselves.
-
-    Every escalated record must carry one of these. A violation report that a human
-    cannot independently verify is not auditable.
-    """
-    from PIL import Image
-
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    img = Image.open(image_path)
-    x1, y1, x2, y2 = person.bbox
-    dx, dy = int((x2 - x1) * pad), int((y2 - y1) * pad)
-    crop = img.crop((max(0, x1 - dx), max(0, y1 - dy),
-                     min(img.width, x2 + dx), min(img.height, y2 + dy)))
-    dst = out_dir / f"{Path(image_path).stem}_person{person.person_id}.jpg"
-    crop.save(dst, quality=92)
-    return str(dst)
 
 
 if __name__ == "__main__":
@@ -326,7 +307,13 @@ if __name__ == "__main__":
                        zone_map=zmap, camera_id=args.camera)
 
     print(rep.to_json())
+    from evidence import EvidenceStore
+    store = EvidenceStore(args.evidence_dir)
     for p in rep.violations + rep.needs_review:
         where = p.zone.label if p.zone else "no zone config"
+        label = f"missing {'+'.join(p.missing)}" if p.missing else ""
+        stored = store.save_from_image_file(
+            f"{Path(args.image).stem}_person{p.person_id}", args.image, p.bbox,
+            label=label)
         print(f"person {p.person_id}: {p.status} in {where} "
-              f"-> evidence {save_evidence(args.image, p, args.evidence_dir)}")
+              f"-> evidence {stored.crop_path}")

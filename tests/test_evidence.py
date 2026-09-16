@@ -116,3 +116,69 @@ def test_clear_empties_the_store(store, frame):
     store.save("evt_x", frame, BBOX)
     store.clear()
     assert store.usage()["files"] == 0
+
+
+# ------------------------------- one evidence format, keyed by the event id
+#
+# The pipeline used to write evidence two ways: the video path through this store
+# (annotated frame + crop), the stills path through a `save_evidence` helper that
+# produced a bare crop with no frame and no annotation. A reviewer opening the second
+# kind saw a photograph of a worker with nothing marking what was alleged, and the
+# console would have had to guess which kind it was holding.
+
+def test_the_stills_path_produces_the_same_pair_as_the_video_path(store, frame,
+                                                                  tmp_path):
+    source = tmp_path / "still.jpg"
+    cv2.imwrite(str(source), frame)
+
+    from_video = store.save("evt_video", frame, BBOX, label="missing helmet")
+    from_still = store.save_from_image_file("evt_still", source, BBOX,
+                                            label="missing helmet")
+
+    for stored in (from_video, from_still):
+        assert Path(stored.frame_path).exists()
+        assert Path(stored.crop_path).exists()
+        evidence = stored.as_event_evidence()
+        assert evidence.frame_path and evidence.crop_path
+
+
+def test_evidence_filenames_are_derived_from_the_event_id(store, frame):
+    """The invariant the pipeline's double id-generation used to hold up by luck.
+
+    The event points at these filenames. If an id is minted twice and the two ever
+    disagree, the event references files that were never written -- and the console
+    shows a broken image where the evidence should be.
+    """
+    stored = store.save("evt_20260916T101500_cam_3_t7", frame, BBOX)
+    assert Path(stored.frame_path).name == "frame_evt_20260916T101500_cam_3_t7.jpg"
+    assert Path(stored.crop_path).name == "crop_evt_20260916T101500_cam_3_t7.jpg"
+
+
+def test_the_second_evidence_format_is_gone():
+    """ppe_compliance.save_evidence was the other way evidence got written."""
+    import ppe_compliance
+    assert not hasattr(ppe_compliance, "save_evidence")
+
+
+def test_build_event_honours_an_id_the_caller_already_wrote_files_under():
+    """The fix for the overwrite-after-the-fact pattern in pipeline.py."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from datetime import datetime
+
+    from events import RIYADH, build_event
+
+    class FakeZone:
+        name, label, required_ppe, severity_multiplier = "z", "Z", ["helmet"], 1.0
+
+    class FakeAssessment:
+        bbox, person_id, missing, present, indeterminate = (0, 0, 10, 20), 1, [], {}, []
+        status, person_confidence, zone, reasons = "compliant", 0.9, None, []
+
+    when = datetime(2026, 9, 16, 10, 15, tzinfo=RIYADH)
+    event = build_event(FakeAssessment(), FakeZone(), "cam_3", 7, when=when,
+                        event_id="evt_written_under_this")
+    assert event.event_id == "evt_written_under_this"
+
+    minted = build_event(FakeAssessment(), FakeZone(), "cam_3", 7, when=when)
+    assert minted.event_id == "evt_20260916T101500_cam_3_t7"

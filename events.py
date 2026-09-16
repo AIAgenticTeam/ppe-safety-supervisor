@@ -161,16 +161,22 @@ def make_event_id(camera_id: str, track_id: int, when: datetime) -> str:
 def build_event(assessment, zone, camera_id: str, track_id: int,
                 confirmation: Confirmation | None = None,
                 when: datetime | None = None,
-                evidence: Evidence | None = None) -> ViolationEvent:
+                evidence: Evidence | None = None,
+                event_id: str | None = None) -> ViolationEvent:
     """Assemble an event from a PersonAssessment (ppe_compliance) and a Zone (zones).
 
     `assessment` is duck-typed so this module stays importable without ultralytics.
+
+    Pass `event_id` when evidence files have already been written under it. Callers used
+    to let this function mint its own and then overwrite the attribute afterwards, which
+    worked only because the same inputs produce the same id -- an invariant nothing
+    enforced, holding together filenames that were already on disk.
     """
     when = when or datetime.now(RIYADH)
     x1, y1, x2, y2 = assessment.bbox
 
     return ViolationEvent(
-        event_id=make_event_id(camera_id, track_id, when),
+        event_id=event_id or make_event_id(camera_id, track_id, when),
         captured_at=when.isoformat(timespec="seconds"),
         camera_id=camera_id,
         zone=ZoneRef(

@@ -78,7 +78,7 @@ work at all.
 
 ---
 
-## 4. Two incompatible evidence formats — BUG
+## 4. Two incompatible evidence formats — FIXED 16 Sep
 
 `pipeline.py` uses two different mechanisms depending on input:
 
@@ -91,11 +91,18 @@ The console will receive events whose `evidence` block means different things. W
 stills path produces an unannotated crop — a reviewer sees a photograph of a worker with
 no indication of what was alleged.
 
-**Fix:** route stills through `EvidenceStore` too and delete `save_evidence`.
+**Fixed** exactly that way. `process_image` now calls
+`EvidenceStore.save_from_image_file`, and `ppe_compliance.save_evidence` is gone.
+Both paths write an annotated frame + crop pair into the same directory under the
+same naming scheme, so the console needs no special case and no reviewer is ever
+handed a photograph with nothing marking what was alleged.
+
+`tests/test_pipeline_stills.py` covers the path with the detector stubbed, which is
+how the second format survived this long -- `process_image` had no test at all.
 
 ---
 
-## 5. `event_id` is generated twice and the overwrite is load-bearing — FRAGILE
+## 5. `event_id` is generated twice and the overwrite is load-bearing — FIXED 16 Sep
 
 ```python
 event_id = make_event_id(camera_id, confirmation.track_id, when)
@@ -108,7 +115,10 @@ Same inputs give the same id, so it works. But the evidence files are already wr
 under the first id, so if the two ever diverge the event points at filenames that do not
 exist. The overwrite is doing real work and looks like a leftover.
 
-**Fix:** pass `event_id` into `build_event` instead of overwriting after.
+**Fixed** as suggested. `build_event` takes an optional `event_id`, and both pipeline
+paths mint it once before any file is written. A test pins the invariant the
+overwrite was silently holding up: the event's evidence paths are named for the
+event's own id.
 
 ---
 

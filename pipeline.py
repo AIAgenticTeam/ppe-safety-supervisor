@@ -31,7 +31,7 @@ from pathlib import Path
 from events import (RIYADH, Confirmation, Evidence, ViolationEvent, build_event,
                     make_event_id)
 from evidence import EvidenceStore
-from ppe_compliance import Policy, assess_detections, save_evidence
+from ppe_compliance import Policy, assess_detections
 from zones import ZoneMap
 
 IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -54,17 +54,29 @@ def process_image(model, image_path: Path, zmap: ZoneMap, camera_id: str,
     when = datetime.fromtimestamp(image_path.stat().st_mtime, RIYADH)
     events: list[ViolationEvent] = []
 
+    store = EvidenceStore(out_dir / "evidence")
+
     for person in people:
+        # The id is minted before anything is written, because the evidence filenames
+        # are built from it. Deriving it twice and trusting the two to agree kept the
+        # event pointing at files only by coincidence.
+        event_id = make_event_id(camera_id, person.person_id, when)
+
         evidence = Evidence()
         if save_crops:
-            crop_dir = out_dir / "crops"
-            evidence.crop_path = save_evidence(image_path, person, crop_dir)
-            evidence.frame_path = str(image_path)
+            # Same store as the video path. The stills path used to write a bare crop
+            # with no frame and no annotation, so a reviewer opening it saw a
+            # photograph of a worker with nothing marking what was alleged.
+            label = f"missing {'+'.join(person.missing)}" if person.missing else ""
+            stored = store.save_from_image_file(event_id, image_path, person.bbox,
+                                                label=label)
+            evidence = stored.as_event_evidence()
 
         event = build_event(
             assessment=person,
             zone=person.zone or zmap.zone_or_default(camera_id, person.bbox),
             camera_id=camera_id,
+            event_id=event_id,
             # Without a tracker, ids are per-frame only. Day 2 replaces this with
             # a ByteTrack id that is stable across the confirmation window.
             track_id=person.person_id,
@@ -133,8 +145,8 @@ def process_video(video_path: Path, weights: Path, zmap: ZoneMap, camera_id: str
             ),
             when=when,
             evidence=stored.as_event_evidence(),
+            event_id=event_id,
         )
-        event.event_id = event_id
         events.append(event)
 
     return events
