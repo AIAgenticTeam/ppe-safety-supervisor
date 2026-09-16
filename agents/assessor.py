@@ -23,7 +23,8 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from agents.state import Citation, Draft, CaseState  # noqa: E402
+from agents.llm import ModelUnavailable, complete  # noqa: E402
+from agents.state import Blocker, CaseState, Citation, Draft  # noqa: E402
 from agents.tools import (event_facts, lookup_clause, retrieve_clause_text,  # noqa: E402
                           score_baseline)
 
@@ -123,8 +124,16 @@ def assess(state: CaseState, client=None, model: str = "gpt-4o-mini") -> CaseSta
 
     draft: Draft | None = None
     for step in range(MAX_STEPS):
-        reply = client.chat.completions.create(
-            model=model, messages=messages, tools=TOOL_SCHEMAS, temperature=0)
+        try:
+            reply = complete(client, model=model, messages=messages,
+                             tools=TOOL_SCHEMAS, temperature=0)
+        except ModelUnavailable as exc:
+            # A dead API is not a reason to lose a finding. The case parks, the event
+            # is still recorded, and a human sees it in the queue.
+            state.log("assessor", "model", {}, f"unavailable: {exc}")
+            state.block(Blocker.MODEL_UNAVAILABLE)
+            state.draft = None
+            return state
         choice = reply.choices[0].message
         messages.append(choice)
 

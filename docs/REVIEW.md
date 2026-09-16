@@ -49,7 +49,7 @@ the defaults -- documented, and unreachable in production because every event ca
 
 ---
 
-## 3. `worker_ref` is never produced, so the escalation beat cannot fire — CRITICAL
+## 3. `worker_ref` is never produced, so the escalation beat cannot fire — RESOLVED 16 Sep
 
 ```
 fixtures WITH worker_ref:              4/20   (hand-written by me)
@@ -64,8 +64,17 @@ This is known and documented, but it is worth stating plainly: **until the conso
 identity, the repeat-offender path only works on fixtures.** That is a demo built on
 synthetic data at the exact moment the panel is most attentive.
 
-**Fix:** Lane D's identity binding is not a nice-to-have, it is on the critical path for
-the demo. Build it before the Streamlit polish.
+**Resolved.** The vision system never producing `worker_ref` turned out to be the
+correct design, not the gap -- a ByteTrack id is not an identification. Identity is
+now supplied by a supervisor and refused without one: `attach_identity` checks the
+roster and records who bound it, and `scripts/run_agents.py --bind W-0412 --by khalid`
+is the path Lane D's console will call.
+
+The escalation beat fires on real footage, not fixtures: two bound priors took the
+live Lane A event to severity 7.0 / escalation, approval required.
+
+Lane D still owns the dropdown. It is no longer on the critical path for the beat to
+work at all.
 
 ---
 
@@ -115,20 +124,35 @@ exist. The overwrite is doing real work and looks like a leftover.
 So the documented design and the shipped schema disagree. Whoever writes Agent 2 will
 find a multiplier in the event and reasonably use it, double-counting zone context.
 
-**Fix:** decide. Either remove it (schema bump, fixtures regenerated, two tests rewritten)
-or keep it and correct the doc. Do not leave it ambiguous.
+**Still open.** Note this is a *different* field from `SeverityScore.zone_multiplier`,
+which was removed from `agents/state.py` on 16 Sep -- that one was Lane C's own and
+never read. This one is in the frozen event schema, 20 fixtures and `zones.json`, so
+removing it is a schema bump and a fixture regeneration.
+
+Contained for now: `event_facts()` withholds it, so no agent can double-count with
+it, and `test_the_zombie_multiplier_never_reaches_an_agent` holds that in place.
+
+**Fix:** decide before Lane A is touched again. Either remove it (schema bump,
+fixtures regenerated, two tests rewritten) or keep it and correct the doc.
 
 ---
 
-## 7. Severity scoring is built but wired to nothing — INTEGRATION GAP
+## 7. Severity scoring is built but wired to nothing — RESOLVED 16 Sep
 
 `ClauseMap.score()` is called by no production code — only tests. Events carry no
 `severity` field, so Lane C must import `ClauseMap` and compute it. That is the intended
 design, but nobody has written the glue, and the event schema gives no hint it is
 required.
 
-**Fix:** either add `severity` to the event (schema bump) or document loudly in
-`EVENT_SCHEMA.md` that the consumer must compute it.
+**Resolved** the second way, and more strictly than planned. The Adjudicator calls
+`final_severity`, which reads the zone, the missing items and the confirmed prior
+count **itself** -- it takes no arguments at all. An early live run had the model
+read `prior_violations: 2` and then ask for a score with `priors=0`, recording a
+warning-band number underneath an escalation. A deterministic function whose inputs
+the model supplies is not deterministic.
+
+`gate_action_matches_the_score` now also refuses to let an action outrun its score
+without a human signature.
 
 ---
 

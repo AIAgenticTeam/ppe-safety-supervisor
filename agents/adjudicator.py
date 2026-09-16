@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from agents.llm import ModelUnavailable, complete  # noqa: E402
 from agents.state import Action, Blocker, CaseState, Decision, SeverityScore  # noqa: E402
 from agents.tools import (assess_confidence, event_facts, final_severity,  # noqa: E402
                           get_worker_history)
@@ -164,8 +165,16 @@ def adjudicate(state: CaseState, db=None, client=None,
 
     decision: Decision | None = None
     for _ in range(MAX_STEPS):
-        reply = client.chat.completions.create(
-            model=model, messages=messages, tools=TOOL_SCHEMAS, temperature=0)
+        try:
+            reply = complete(client, model=model, messages=messages,
+                             tools=TOOL_SCHEMAS, temperature=0)
+        except ModelUnavailable as exc:
+            # A dead API is not a reason to lose a finding. The case parks, the event
+            # is still recorded, and a human sees it in the queue.
+            state.log("adjudicator", "model", {}, f"unavailable: {exc}")
+            state.block(Blocker.MODEL_UNAVAILABLE)
+            state.decision = None
+            return state
         choice = reply.choices[0].message
         messages.append(choice)
 

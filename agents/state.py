@@ -43,6 +43,7 @@ class Blocker(str, Enum):
     WORKER_IDENTITY = "worker_identity"
     NO_CITATION = "no_citation"
     WRITE_UNCONFIRMED = "write_unconfirmed"
+    MODEL_UNAVAILABLE = "model_unavailable"
 
 
 ORDER = (Action.NO_ACTION, Action.LOG_ONLY, Action.WARNING,
@@ -98,7 +99,6 @@ class SeverityScore:
     labels is computable in week 6."""
 
     base: int                        # 1-5, from the item and zone
-    zone_multiplier: float = 1.0
     repeat_count: int = 0
     evidence_strength: float = 1.0   # lowest detector recall among missing items
     total: float = 0.0

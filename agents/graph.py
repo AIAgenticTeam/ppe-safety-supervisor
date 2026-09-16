@@ -41,6 +41,7 @@ from agents.adjudicator import adjudicate  # noqa: E402
 from agents.assessor import assess  # noqa: E402
 from agents.guardrails import (ENTRY_GATES, POST_ASSESSOR, POST_RECORDER,  # noqa: E402
                                gate_action_matches_the_score, gate_human_approval,
+                               gate_no_unsupported_pattern_claim,
                                gate_low_confidence_goes_to_a_human, run_gates)
 from agents.recorder import record  # noqa: E402
 from agents.state import Blocker, CaseState  # noqa: E402
@@ -71,6 +72,24 @@ class GraphState(TypedDict, total=False):
 # Nodes
 # ---------------------------------------------------------------------------
 
+def _park(gs: GraphState, db, reason: str) -> GraphState:
+    """End a case the agents could not finish -- but keep the finding.
+
+    A parked case never reaches the Recorder, so without this the event exists only in
+    whatever JSON Lane A wrote. A model outage would then mean confirmed violations
+    leave no trace in the store at all, which is the difference between a degraded
+    system and a lossy one. The write is best-effort: if the database is the thing
+    that is broken, parking is still the right outcome.
+    """
+    case = gs["case"]
+    try:
+        db.record_event(case.event)
+        case.log("graph", "park", {}, "event kept, no decision")
+    except Exception as exc:                    # noqa: BLE001
+        case.log("graph", "park", {}, f"event NOT kept: {exc}")
+    return {**gs, "case": case, "outcome": "parked", "reason": reason}
+
+
 def node_intake(gs: GraphState) -> GraphState:
     """Only a temporally confirmed violation enters the agent layer."""
     case = gs["case"]
@@ -82,14 +101,16 @@ def node_intake(gs: GraphState) -> GraphState:
     return {**gs, "outcome": ""}
 
 
-def make_node_assess(client, model):
+def make_node_assess(db, client, model):
     def node_assess(gs: GraphState) -> GraphState:
         case = assess(gs["case"], client=client, model=model)
+        if case.blocked_on is Blocker.MODEL_UNAVAILABLE:
+            return _park({**gs, "case": case}, db, "the model could not be reached")
         verdict = run_gates(case, POST_ASSESSOR)
         if not verdict:
             if verdict.blocker:
                 case.block(verdict.blocker)
-            return {**gs, "case": case, "outcome": "parked", "reason": verdict.reason}
+            return _park({**gs, "case": case}, db, verdict.reason)
         return {**gs, "case": case, "outcome": ""}
     return node_assess
 
@@ -98,8 +119,10 @@ def make_node_adjudicate(db, client, model):
     def node_adjudicate(gs: GraphState) -> GraphState:
         case = adjudicate(gs["case"], db=db, client=client, model=model)
         if case.decision is None:
-            return {**gs, "case": case, "outcome": "parked",
-                    "reason": "the adjudicator reached no decision"}
+            reason = ("the model could not be reached"
+                      if case.blocked_on is Blocker.MODEL_UNAVAILABLE
+                      else "the adjudicator reached no decision")
+            return _park({**gs, "case": case}, db, reason)
 
         approval = gate_human_approval(case)
         if not approval:
@@ -115,6 +138,14 @@ def make_node_adjudicate(db, client, model):
             case.decision.requires_approval = True
             case.log("graph", "gate_low_confidence", {"score": confidence.score},
                      weak.reason)
+
+        # A notice alleging a pattern the record does not show is the one harm the
+        # model can do with prose alone. Nothing downstream checks the draft text.
+        supported = gate_no_unsupported_pattern_claim(case)
+        if not supported:
+            case.block(Blocker.WORKER_IDENTITY)
+            case.decision.requires_approval = True
+            case.log("graph", "gate_no_unsupported_pattern_claim", {}, supported.reason)
 
         # An action harsher than the rubric supports is not refused -- it may well be
         # the right call -- but it never goes out without someone signing for it.
@@ -156,7 +187,7 @@ def build_graph(db, client=None, model: str = "gpt-4o-mini",
 
     g = StateGraph(GraphState)
     g.add_node("intake", node_intake)
-    g.add_node("assess", make_node_assess(client, model))
+    g.add_node("assess", make_node_assess(db, client, model))
     g.add_node("adjudicate", make_node_adjudicate(db, client, model))
     g.add_node("record", make_node_record(db, bound_by))
 

@@ -1,0 +1,14 @@
+# Normalise line endings. Without this, an edit made by a tool that writes text in
+# Windows mode rewrites every line of a file as CRLF, and the diff a teammate sees is
+# the whole file rather than the three lines that changed.
+* text=auto eol=lf
+
+# Binary, never touched.
+*.pt      binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.mp4     binary
+*.faiss   binary
+*.pkl     binary
+*.db      binary

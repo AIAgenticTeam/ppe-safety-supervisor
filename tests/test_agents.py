@@ -454,3 +454,190 @@ def test_a_gentler_action_than_the_score_passes_freely(tmp_path):
     out = run_case(confirmed_event(), db,
                    client=StubClient(_full_script("log_only")))
     assert not any(s.tool == "gate_action_matches_the_score" for s in out["case"].trace)
+
+
+# ------------------------------------------------ when the model is not there
+#
+# An unguarded chat.completions.create raises through LangGraph and takes the run down.
+# On a demo night that is a traceback instead of a system. These check it degrades.
+
+from agents import llm  # noqa: E402
+from agents.guardrails import gate_no_unsupported_pattern_claim  # noqa: E402
+from agents.llm import ModelUnavailable, complete  # noqa: E402
+
+
+class RateLimit(Exception):
+    pass
+
+
+class AuthenticationError(Exception):
+    pass
+
+
+class FlakyClient:
+    """Fails `failures` times, then behaves."""
+
+    def __init__(self, failures, exc=RateLimit, turns=None):
+        self.failures, self.exc, self.calls = failures, exc, 0
+        self.turns = list(turns or [])
+        self.chat = type("C", (), {"completions": self})()
+
+    def create(self, **kwargs):
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise self.exc("upstream said no")
+        turn = self.turns.pop(0) if self.turns else []
+        message = StubMessage(tool_calls=turn)
+        return type("R", (), {"choices": [type("Ch", (), {"message": message})()]})()
+
+
+@pytest.fixture(autouse=True)
+def _no_backoff_sleep(monkeypatch):
+    monkeypatch.setattr(llm, "BASE_DELAY", 0)
+
+
+def test_a_transient_failure_is_retried():
+    client = FlakyClient(failures=2)
+    complete(client, model="m", messages=[])
+    assert client.calls == 3
+
+
+def test_retries_are_not_infinite():
+    client = FlakyClient(failures=99)
+    with pytest.raises(ModelUnavailable):
+        complete(client, model="m", messages=[])
+    assert client.calls == llm.ATTEMPTS
+
+
+def test_a_bad_key_is_not_retried():
+    """It will still be wrong in two seconds, and each attempt costs a call."""
+    client = FlakyClient(failures=99, exc=AuthenticationError)
+    with pytest.raises(ModelUnavailable):
+        complete(client, model="m", messages=[])
+    assert client.calls == 1
+
+
+def test_an_unreachable_model_parks_the_case_and_keeps_the_finding(tmp_path):
+    """Degraded, not lost: no decision, but the event is on file and a human sees it."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db, client=FlakyClient(failures=99))
+    assert out["outcome"] == "parked"
+    assert out["case"].blocked_on == Blocker.MODEL_UNAVAILABLE
+    assert out["case"].decision is None
+    assert db.get_event("evt_test_1") is not None, "the finding must survive an outage"
+
+
+def test_the_adjudicator_going_dark_still_keeps_the_finding(tmp_path):
+    """The assessor succeeds, then the model dies before a decision."""
+    db = EventStore(tmp_path / "t.db")
+    client = FlakyClient(failures=0, turns=[
+        [StubCall("submit_draft", {"summary": "s", "clause_ids": ["1926.100"]})]])
+    client.failures, client.calls = 99, -1      # first call works, the rest do not
+    out = run_case(confirmed_event(), db, client=client)
+    assert out["outcome"] == "parked"
+    assert db.get_event("evt_test_1") is not None
+
+
+# ------------------------------------- a pattern the record does not support
+
+def _decision_saying(text, priors=0):
+    state = CaseState(event=confirmed_event())
+    state.decision = Decision(action=Action.WARNING, severity=SeverityScore(base=3),
+                              prior_violations=priors, draft_body=text, rationale="")
+    return state
+
+
+def test_alleging_a_third_violation_with_nothing_on_record_is_blocked():
+    """The one harm the model can do with prose alone. A supervisor reading this
+    would act on a pattern that does not exist."""
+    verdict = gate_no_unsupported_pattern_claim(
+        _decision_saying("This is the worker's third violation this month."))
+    assert not verdict and verdict.blocker == Blocker.WORKER_IDENTITY
+
+
+@pytest.mark.parametrize("claim", [
+    "The worker has prior violations on file.",
+    "This is a repeated failure to wear head protection.",
+    "The worker was again without a helmet.",
+    "This shows a pattern of non-compliance.",
+    "There is a history of similar findings.",
+    "The worker continues to disregard PPE requirements.",
+])
+def test_pattern_language_is_caught_in_its_usual_forms(claim):
+    assert not gate_no_unsupported_pattern_claim(_decision_saying(claim))
+
+
+def test_the_same_claim_passes_when_the_record_supports_it(tmp_path):
+    verdict = gate_no_unsupported_pattern_claim(
+        _decision_saying("This is the worker's third violation.", priors=2))
+    assert verdict
+
+
+def test_a_plain_single_incident_notice_passes():
+    assert gate_no_unsupported_pattern_claim(
+        _decision_saying("A worker was without head protection at the grinding "
+                         "station. Please address this."))
+
+
+def test_priority_does_not_trip_the_prior_check():
+    """Word boundaries matter: 'priority' is not 'prior violation'."""
+    assert gate_no_unsupported_pattern_claim(
+        _decision_saying("This is a high priority finding requiring attention."))
+
+
+def test_an_unsupported_claim_reaching_the_graph_demands_a_human(tmp_path):
+    db = EventStore(tmp_path / "t.db")
+    script = _full_script()
+    script[-1] = [StubCall("submit_decision", {
+        "action": "warning", "rationale": "r",
+        "draft_body": "The worker has prior violations and continues to offend."})]
+    out = run_case(confirmed_event(), db, client=StubClient(script))
+    assert out["case"].decision.requires_approval
+    assert out["case"].blocked_on == Blocker.WORKER_IDENTITY
+
+
+# --------------------------------------- site policy must not read as regulation
+
+from agents.guardrails import gate_site_policy_is_labelled  # noqa: E402
+
+
+def test_gloves_presented_as_a_regulation_are_refused():
+    """Construction has no hand-protection clause. Gloves rest on the employer's
+    general duty, and saying otherwise overstates what the law requires."""
+    state = CaseState(event=confirmed_event(["gloves"]))
+    state.draft = Draft(summary="The worker was not wearing gloves, required under "
+                                "29 CFR 1926.95.",
+                        citations=[Citation("1926.95", "General requirements",
+                                            is_site_policy=True)])
+    assert not gate_site_policy_is_labelled(state)
+
+
+def test_the_same_finding_passes_when_it_says_site_policy():
+    state = CaseState(event=confirmed_event(["gloves"]))
+    state.draft = Draft(summary="The worker was not wearing gloves; hand protection "
+                                "here rests on site policy under 29 CFR 1926.95.",
+                        citations=[Citation("1926.95", "General requirements",
+                                            is_site_policy=True)])
+    assert gate_site_policy_is_labelled(state)
+
+
+def test_a_genuine_regulation_needs_no_such_label():
+    state = CaseState(event=confirmed_event(["helmet"]))
+    state.draft = Draft(summary="The worker was without head protection.",
+                        citations=[Citation("1926.100", "Head protection",
+                                            is_site_policy=False)])
+    assert gate_site_policy_is_labelled(state)
+
+
+def test_the_zombie_multiplier_never_reaches_an_agent():
+    """`severity_multiplier` still rides along in the event schema (REVIEW #6) even
+    though the design dropped it as a double count. An agent handed it would
+    reasonably apply it on top of the zone weights that already encode the same thing.
+
+    event_facts is what keeps that contained, so this asserts the containment rather
+    than trusting it."""
+    from agents.tools import event_facts
+    event = confirmed_event()
+    event["zone"]["severity_multiplier"] = 2.5
+    facts = event_facts(event)
+    assert "severity_multiplier" not in json.dumps(facts)

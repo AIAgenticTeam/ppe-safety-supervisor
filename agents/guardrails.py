@@ -15,6 +15,8 @@ to a human instead of losing it.
 
 from __future__ import annotations
 
+import re
+
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -149,19 +151,47 @@ def gate_low_confidence_goes_to_a_human(state: CaseState, confidence) -> Verdict
     return OK
 
 
-def gate_escalation_needs_priors(state: CaseState, history) -> Verdict:
-    """A repeat-offence escalation must rest on history that was actually read.
+# Phrases that assert a pattern rather than describe one incident. Matched on word
+# boundaries, so "prior" does not fire on "priority".
+PATTERN_CLAIMS = (
+    r"\bprior violation", r"\bprevious violation", r"\brepeat(ed)?\b",
+    r"\bagain\b", r"\bpattern of\b", r"\bhistory of\b", r"\brecurring\b",
+    r"\bsecond (offence|offense|violation|time)\b",
+    r"\bthird (offence|offense|violation|time)\b",
+    r"\bmultiple (violations|occasions|incidents)\b",
+    r"\bcontinues? to\b", r"\bonce again\b",
+)
 
-    `resolved=False` means identity was never bound, so priors are unknown -- and unknown
-    must not be read as zero, nor may an escalation claim a pattern nobody confirmed.
+
+def gate_no_unsupported_pattern_claim(state: CaseState) -> Verdict:
+    """The notice may not allege a pattern the record does not show.
+
+    This is the one place the model can do real harm with prose alone. A supervisor
+    reading "this is the worker's third violation" will act on it, and if identity was
+    never bound there is no third violation -- there is one finding and an accusation
+    built on nothing.
+
+    The severity number cannot cause this, because `final_severity` reads the confirmed
+    count itself. The draft text can, because nothing else checks it.
+
+    It replaces an earlier `gate_escalation_needs_priors`, which compared
+    `prior_violations` against `history.resolved`. That could never fire: the
+    Adjudicator already zeroes the count when identity is unresolved, so the two could
+    not disagree. This checks the claim that actually reaches a human.
     """
     d = state.decision
-    if d is None or d.prior_violations == 0:
-        return OK
-    if not history.resolved:
-        return Verdict(False,
-                       "claims prior violations but identity was never bound",
-                       Blocker.WORKER_IDENTITY)
+    if d is None:
+        return Verdict(False, "no decision")
+    if d.prior_violations > 0:
+        return OK                      # the record supports whatever it says
+
+    text = f"{d.draft_body} {d.rationale}".lower()
+    for phrase in PATTERN_CLAIMS:
+        if re.search(phrase, text):
+            return Verdict(False,
+                           f"the notice alleges a pattern ({phrase.strip(chr(92) + 'b')}) "
+                           f"but no prior violation is on record",
+                           Blocker.WORKER_IDENTITY)
     return OK
 
 
