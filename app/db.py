@@ -69,8 +69,26 @@ CREATE TABLE IF NOT EXISTS decisions (
     decided_at   TEXT NOT NULL
 );
 
+-- Every tool each agent chose, in order. Week 6 is graded on observability, but the
+-- reason to keep it is narrower: when a decision looks wrong, the only way to find out
+-- why is to see what the agent actually asked for and what came back. The trace lived
+-- in CaseState and died with the process, which meant the answer was never available
+-- for the one case anybody wanted to examine.
+CREATE TABLE IF NOT EXISTS trace_steps (
+    event_id     TEXT NOT NULL REFERENCES events(event_id),
+    step_index   INTEGER NOT NULL,
+    agent        TEXT NOT NULL,
+    tool         TEXT NOT NULL,
+    arguments    TEXT NOT NULL DEFAULT '{}',
+    result       TEXT NOT NULL DEFAULT '',
+    latency_ms   INTEGER NOT NULL DEFAULT 0,
+    at           TEXT NOT NULL,
+    PRIMARY KEY (event_id, step_index)
+);
+
 CREATE INDEX IF NOT EXISTS idx_events_worker ON events(worker_id, captured_at);
 CREATE INDEX IF NOT EXISTS idx_events_zone   ON events(camera_id, zone, captured_at);
+CREATE INDEX IF NOT EXISTS idx_events_recent ON events(recorded_at DESC);
 """
 
 
@@ -262,6 +280,47 @@ class EventStore:
                 "WHERE d.requires_approval = 1 AND d.approved_by IS NULL "
                 "ORDER BY d.severity DESC").fetchall()
         return [dict(r) for r in rows]
+
+    def recent(self, limit: int = 50) -> list[dict]:
+        """Most recently recorded findings, for the console's main list."""
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT e.event_id, e.captured_at, e.camera_id, e.zone, e.status, "
+                "       e.missing, e.actionable, e.worker_id, e.bound_by, "
+                "       d.action, d.severity, d.band, d.requires_approval, d.approved_by "
+                "FROM events e LEFT JOIN decisions d USING (event_id) "
+                "ORDER BY e.recorded_at DESC LIMIT ?", (limit,)).fetchall()
+        return [{**dict(r), "missing": json.loads(r["missing"])} for r in rows]
+
+    # ---- the trace ------------------------------------------------------
+
+    def record_trace(self, event_id: str, steps) -> int:
+        """Persist what each agent chose to do.
+
+        Replaces any earlier trace for the event rather than appending, so re-running a
+        case leaves one account of it instead of two interleaved ones.
+        """
+        with closing(self._connect()) as conn:
+            conn.execute("DELETE FROM trace_steps WHERE event_id = ?", (event_id,))
+            conn.executemany(
+                "INSERT INTO trace_steps "
+                "(event_id, step_index, agent, tool, arguments, result, latency_ms, at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                [(event_id, i, s.agent, s.tool, json.dumps(s.arguments),
+                  s.result_summary, s.latency_ms, s.at)
+                 for i, s in enumerate(steps)])
+            conn.commit()
+        return len(steps)
+
+    def get_trace(self, event_id: str) -> list[dict] | None:
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT step_index, agent, tool, arguments, result, latency_ms, at "
+                "FROM trace_steps WHERE event_id = ? ORDER BY step_index",
+                (event_id,)).fetchall()
+        if not rows:
+            return None
+        return [{**dict(r), "arguments": json.loads(r["arguments"])} for r in rows]
 
     # ---- verification ---------------------------------------------------
 

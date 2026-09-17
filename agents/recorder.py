@@ -92,4 +92,13 @@ def record(state: CaseState, db, bound_by: str | None = None) -> CaseState:
         written_at=datetime.now().isoformat(timespec="seconds"),
         verified=verified,
     )
+
+    # The trace goes down last, so it includes this agent's own steps. It is
+    # observability rather than the record itself, so a failure here is reported but
+    # does not fail the case -- the event and decision were already verified above.
+    try:
+        db.record_trace(event_id, state.trace)
+    except Exception as exc:                        # noqa: BLE001
+        state.log("recorder", "record_trace", {}, f"trace not stored: {exc}")
+
     return state

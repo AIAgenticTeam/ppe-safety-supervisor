@@ -87,6 +87,9 @@ def _park(gs: GraphState, db, reason: str, outcome: str = "parked") -> GraphStat
     try:
         db.record_event(case.event)
         case.log("graph", "park", {}, "event kept, no decision")
+        # A parked case is the one somebody will actually want to explain, so its trace
+        # matters more than a clean run's, not less.
+        db.record_trace(case.event["event_id"], case.trace)
     except Exception as exc:                    # noqa: BLE001
         case.log("graph", "park", {}, f"event NOT kept: {exc}")
     return {**gs, "case": case, "outcome": outcome, "reason": reason}
