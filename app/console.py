@@ -417,13 +417,71 @@ def tab_report():
         st.dataframe(rows, hide_index=True, width="stretch")
 
     repeats = report.get("repeat_offenders", [])
-    st.markdown("**Repeat offenders**")
+    label("repeat offenders")
     if repeats:
         st.dataframe(repeats, hide_index=True, width="stretch")
     else:
         st.caption("None — which may mean nobody repeated, or may mean findings have "
                    "not been identified yet. Those are different things, and the "
                    "Identify tab is where the second one is fixed.")
+
+
+def tab_drift():
+    st.subheader("Is the detector still seeing what it used to?")
+    st.caption("Compares recent findings against an earlier window. The failure this "
+               "watches for is quiet: recall does not announce itself when it drops — "
+               "findings simply stop appearing, and an empty queue looks exactly like "
+               "a safe site.")
+
+    days = st.slider("Current window (days)", 1, 60, 7, key="drift_days")
+
+    # Cached because Streamlit renders every tab on every rerun, so without this a
+    # click on Approve would sit through a multi-second Evidently run it never asked
+    # for. Drift over a week does not change between two clicks.
+    @st.cache_data(ttl=120, show_spinner="checking for drift…")
+    def _drift(window: int) -> dict:
+        return get(f"/drift?days={window}") or {}
+
+    result = _drift(days)
+    if st.button("Recheck now", key="drift_refresh"):
+        _drift.clear()
+        st.rerun()
+
+    if not result.get("ran"):
+        st.info(result.get("reason") or "No drift check could be run yet.")
+        st.caption("This is a refusal, not a pass. Too few findings cannot tell you "
+                   "the detector is healthy — only that nobody has looked.")
+        return
+
+    cols = st.columns(3)
+    cols[0].metric("Reference findings", result["reference_rows"])
+    cols[1].metric("Current findings", result["current_rows"])
+    cols[2].metric("Features drifted",
+                   f"{len(result['drifted_columns'])} / {result['checked_columns']}")
+
+    drifted = result["drifted_columns"]
+    if drifted:
+        st.markdown(" ".join(chip(c, "#E35205") for c in drifted),
+                    unsafe_allow_html=True)
+        if "person_confidence" in drifted or "weakest_recall" in drifted:
+            st.warning("Detection confidence has moved. A camera that was repositioned, "
+                       "different light, or unfamiliar clothing all look like this — "
+                       "and all of them mean the detector is working outside what it "
+                       "was measured on.")
+    else:
+        st.success("Nothing moved beyond its threshold.")
+
+    label("every feature checked")
+    st.dataframe(
+        [{"feature": c["column"],
+          "drifted": c["drifted"],
+          "p-value": f"{c['score']:.3g}",
+          "threshold": c["threshold"],
+          "test": c["method"]} for c in result.get("columns", [])],
+        hide_index=True, width="stretch")
+    st.caption("A small p-value means the two windows differ more than chance would "
+               "explain. Features with nothing recorded in them are left out entirely "
+               "rather than counted as unchanged.")
 
 
 # ------------------------------------------------------------------ sidebar
@@ -493,10 +551,10 @@ def main():
     counts_identify = len(get("/queue/identification", {}).get("events", []))
     counts_approve = len(get("/queue/approvals", {}).get("decisions", []))
 
-    identify, approve, events, report = st.tabs([
+    identify, approve, events, report, drift = st.tabs([
         f"Identify{f'  ·  {counts_identify}' if counts_identify else ''}",
         f"Approve{f'  ·  {counts_approve}' if counts_approve else ''}",
-        "Events", "Report"])
+        "Events", "Report", "Monitoring"])
     with identify:
         tab_identify()
     with approve:
@@ -505,6 +563,8 @@ def main():
         tab_events()
     with report:
         tab_report()
+    with drift:
+        tab_drift()
 
 
 main()

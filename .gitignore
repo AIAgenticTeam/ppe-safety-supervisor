@@ -66,3 +66,7 @@ data/footage/scenes/
 
 # built artifacts — rebuild with kb/build_index.py
 kb/index/
+
+# Generated drift reports. Regenerate with `python -m app.monitoring --out ...`;
+# force-add a specific one if it is being cited in the technical report.
+reports/

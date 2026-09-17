@@ -260,6 +260,28 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
             "stats": db().stats(),
         }
 
+    @app.get("/drift", tags=["dashboard"])
+    def drift(days: int = Query(7, ge=1, le=365),
+              save_html: bool = Query(False, description="also write the full report")):
+        """Has the detector walked off the distribution it was trained on?
+
+        The failure this exists for is quiet: recall does not announce itself when it
+        drops, findings simply stop appearing, and an empty queue looks exactly like a
+        safe site. A moved camera or a new site shows up in the confidence distribution
+        well before anybody notices the queue is thin.
+
+        Returns `ran: false` with a reason when there is too little data, rather than a
+        verdict computed from a handful of rows.
+        """
+        from app.monitoring import run_drift
+
+        out = ROOT / "reports" / f"drift_{days}d.html" if save_html else None
+        result = run_drift(db(), days=days, html_path=out)
+        body = result.summary()
+        if result.html:
+            body["report_html"] = result.html
+        return body
+
     @app.get("/stats", tags=["dashboard"])
     def stats():
         return db().stats()

@@ -178,3 +178,25 @@ def test_a_dead_service_gives_an_instruction_not_a_traceback(monkeypatch):
     assert not at.exception, "a down service must not raise"
     errors = " ".join(str(e.value) for e in at.error)
     assert "uvicorn app.api:app" in errors
+
+
+# ------------------------------------------------------------- monitoring
+
+def test_the_monitoring_tab_exists(console):
+    at = console()
+    assert any("Monitoring" in t.label for t in at.tabs)
+
+
+def test_too_little_data_reads_as_a_refusal_not_a_pass(console):
+    """The distinction that matters on this tab. "Cannot tell" and "nothing wrong"
+    must not look the same to a supervisor, or an unmonitored system reads as a
+    healthy one."""
+    at = console()                      # one event: far below the drift minimum
+    rendered = text_of(at).lower()
+    assert "not enough data" in rendered or "no drift check" in rendered
+    assert "refusal, not a pass" in rendered
+
+
+def test_the_tab_says_what_it_is_watching_for(console):
+    at = console()
+    assert "empty queue looks exactly like" in text_of(at).lower()
