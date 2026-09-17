@@ -1,0 +1,22 @@
+# A fixed theme, so the console looks the same on any machine it is demonstrated on.
+# Inheriting the OS light/dark setting means the one rehearsal you did in daylight is
+# not the thing the panel sees.
+#
+# Colours are ANSI Z535 safety values on cool steel neutrals: the palette a real site
+# already uses for signage, which is the right register for this and also keeps the
+# severity bands meaningful rather than decorative.
+
+[theme]
+base                = "light"
+primaryColor        = "#005EB8"   # ANSI safety blue -- "notice"
+backgroundColor     = "#FFFFFF"
+secondaryBackgroundColor = "#F2F5F8"
+textColor           = "#10151C"
+font                = "sans serif"
+
+[server]
+headless            = true
+fileWatcherType     = "auto"
+
+[browser]
+gatherUsageStats    = false
