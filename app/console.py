@@ -442,9 +442,14 @@ def sidebar():
     st.sidebar.caption("Posts events Lane A already produced, through the real API and "
                        "the real agents.")
     pattern = st.sidebar.text_input("Event files", "events/run1/events/*.json")
-    judge = st.sidebar.checkbox("Run the agents", value=True,
-                                help="Off just records the findings, and spends nothing.")
-    if st.sidebar.button("Replay", type="primary"):
+    judge = st.sidebar.checkbox("Judge with the agents", value=True,
+                                help="Unticked just records the findings and spends "
+                                     "nothing. This is a setting — the button below "
+                                     "is what runs it.")
+    # The label says what the button will do, because a tickbox called "run the agents"
+    # reads as the action and gets clicked instead of the button.
+    if st.sidebar.button("Replay and judge" if judge else "Replay without judging",
+                         type="primary", width="stretch"):
         import glob
         import json
         paths = sorted(glob.glob(str(ROOT / pattern)))

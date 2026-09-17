@@ -641,3 +641,25 @@ def test_the_zombie_multiplier_never_reaches_an_agent():
     event["zone"]["severity_multiplier"] = 2.5
     facts = event_facts(event)
     assert "severity_multiplier" not in json.dumps(facts)
+
+
+def test_a_missing_api_key_parks_the_case_instead_of_raising(monkeypatch, tmp_path):
+    """OpenAI() raises in its CONSTRUCTOR when there is no key, before complete() is
+    ever reached — so the ModelUnavailable handling around the call did not cover it.
+
+    It surfaced as an HTTP 500 from POST /events that said nothing useful. A missing
+    credential is an unreachable model like any other: keep the finding, park the case,
+    tell a human why.
+    """
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+
+    state = assess(CaseState(event=confirmed_event()), client=None)
+    assert state.draft is None
+    assert state.blocked_on == Blocker.MODEL_UNAVAILABLE
+
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db, client=None)
+    assert out["outcome"] == "parked"
+    assert "model" in out["reason"].lower()
+    assert db.get_event("evt_test_1") is not None, "the finding must survive"

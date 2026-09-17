@@ -147,7 +147,16 @@ def adjudicate(state: CaseState, db=None, client=None,
                model: str = "gpt-4o-mini") -> CaseState:
     from openai import OpenAI
 
-    client = client or OpenAI()
+    if client is None:
+        try:
+            client = OpenAI()
+        except Exception as exc:      # noqa: BLE001 -- usually no API key
+            # Same outcome as an unreachable model: the finding is kept, the
+            # case parks, and a human is told why. A 500 here said nothing.
+            state.log("adjudicator", "model", {}, f"unavailable: {exc}")
+            state.block(Blocker.MODEL_UNAVAILABLE)
+            state.decision = None
+            return state
     facts = event_facts(state.event)
     captured: dict = {}
 

@@ -45,6 +45,18 @@ from app.db import EventStore, Worker  # noqa: E402
 
 DEFAULT_DB = os.getenv("SAFETY_DB", "safety.db")
 
+# The key lives in .env, which is gitignored. Loaded here because this process is the
+# one that calls the model -- scripts/run_agents.py loaded it for its own process and
+# nothing did it for the service, so judging over HTTP failed with a 500 that said
+# nothing useful. Never loaded inside `agents/`, so the test suite still runs with no
+# credentials at all.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
+
 # Evidence is served by event id, never by a path from the request. The stored path is
 # still checked against these roots before anything is opened, because the event body
 # arrived over the network and a path inside it is not trustworthy either.
