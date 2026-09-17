@@ -15,6 +15,10 @@ textColor           = "#10151C"
 font                = "sans serif"
 
 [server]
+# Headless suppresses Streamlit's first-run "enter your email" prompt, which blocks
+# on any machine that has not run it before -- a teammate's, or a demo laptop. The
+# launcher opens the browser itself instead, so nobody has to pick between three
+# printed URLs, one of which is the API's Swagger page.
 headless            = true
 fileWatcherType     = "auto"
 

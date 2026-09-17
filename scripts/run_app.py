@@ -78,13 +78,23 @@ def main(argv=None) -> int:
     ap.add_argument("--no-judge", action="store_true",
                     help="seed without running the agents, and spend nothing")
     ap.add_argument("--api-only", action="store_true")
+    ap.add_argument("--no-browser", action="store_true",
+                    help="do not open the console automatically")
     args = ap.parse_args(argv)
+
+    # Line-buffer, so the URL a person is waiting for arrives when it is printed and
+    # not when the block fills. Redirected stdout buffers in 8K chunks otherwise, which
+    # is exactly the case where somebody is staring at a blank terminal.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:                   # noqa: BLE001 -- not every stream supports it
+        pass
 
     api_url = f"http://127.0.0.1:{args.api_port}"
     env = {**os.environ, "SAFETY_DB": args.db, "SAFETY_API": api_url}
 
-    print(f"  db       {args.db}")
-    print(f"  api      {api_url}/docs")
+    console_url = f"http://127.0.0.1:{args.console_port}"
+    print(f"\n  database   {args.db}")
 
     procs: list[subprocess.Popen] = []
     try:
@@ -96,19 +106,39 @@ def main(argv=None) -> int:
         if not wait_for(f"{api_url}/health"):
             print("  the service did not come up; see the output above", file=sys.stderr)
             return 1
-        print("  api      up")
 
         if args.seed:
             seed(api_url, args.seed, judge=not args.no_judge)
 
         if not args.api_only:
-            print(f"  console  http://127.0.0.1:{args.console_port}")
             procs.append(subprocess.Popen(
                 [PY, "-m", "streamlit", "run", "app/console.py",
                  "--server.port", str(args.console_port)],
                 cwd=ROOT, env=env))
 
-        print("\n  Ctrl-C to stop both.\n")
+        # The console is the thing a person opens; the API is the thing it talks to.
+        # Printing them the other way round sends people to the Swagger page and leaves
+        # them wondering where the application went.
+        print("\n" + "=" * 58)
+        if args.api_only:
+            print(f"  API only          {api_url}/docs")
+        else:
+            print(f"  OPEN THIS  ->     {console_url}")
+            print(f"  api (not the ui)  {api_url}/docs")
+        print("=" * 58)
+
+        if not args.api_only and not args.no_browser:
+            # Opened here rather than by Streamlit, because Streamlit only opens a
+            # browser in non-headless mode -- and non-headless is what triggers its
+            # first-run "enter your email" prompt, which blocks on any machine that has
+            # not run it before. A demo laptop is exactly that machine.
+            import webbrowser
+            if wait_for(console_url, seconds=25):
+                webbrowser.open(console_url)
+            else:
+                print("  (console slow to start — open the URL above yourself)")
+
+        print("\n  Ctrl-C to stop.\n")
         while all(p.poll() is None for p in procs):
             time.sleep(0.5)
         # One died on its own; do not leave the other orphaned.
