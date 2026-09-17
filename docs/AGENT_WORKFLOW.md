@@ -222,6 +222,31 @@ mutates shared state. Splitting them puts the guardrails on the edges *between* 
 where they can actually block — a single agent with five tools has no seam to put a human
 approval gate into.
 
+### And why not a fourth
+
+An earlier design had a **Weekly Analyst** on a second timescale: aggregate the event log,
+find repeat patterns, write a weekly report. It was cut, and the reason is the same
+principle the rest of this document is built on.
+
+Every tool it was specified to use -- `query_event_log`, `aggregate_by`,
+`find_repeat_patterns` -- is SQL that already exists and is already tested (`by_zone`,
+`repeat_offenders`, `stats`, served by `GET /report`). So its actual contribution would
+have been writing prose around numbers it had just been handed.
+
+That is precisely the shape of the worst bug this system has had. The Adjudicator once
+read `prior_violations: 2` and then asked for a score with `priors=0` -- a model restating
+a figure it was given, wrongly. A weekly report is the same risk with **less** protection:
+a citation can be re-derived from the clause map and checked, but a sentence claiming the
+grinder had twelve violations when the query returned eight has nothing to check it
+against, in the one artefact a manager reads without verifying.
+
+A weekly agent could still earn its place by doing what the SQL cannot -- deciding which
+of eleven anomalies deserves attention, noticing that walkway glove violations tripled
+after a barrier moved, or proposing that a zone's `required_ppe` list is wrong. That is a
+different and larger piece of work than the one that was specified, and it is not on the
+critical path. The weekly view is deterministic, and the report says so rather than
+implying a judgement nobody made.
+
 ## Where determinism stops and autonomy starts
 
 The line is not drawn by what is easy to automate. It is drawn by asking **what does

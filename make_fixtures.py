@@ -2,7 +2,7 @@
 Generate a realistic set of ViolationEvents without a GPU, a model, or a camera.
 
 This is what unblocks Lanes C and D on day one. The agent graph, the Streamlit
-console, the SQLite schema and the weekly report can all be built and tested
+console, the SQLite schema and the zone report can all be built and tested
 against these files today, while Lane A is still wiring the tracker.
 
     python make_fixtures.py --out fixtures
@@ -148,7 +148,8 @@ def build(zmap: ZoneMap) -> list[ViolationEvent]:
                     present={"helmet": 0.92, "gloves": 0.80, "goggles": 0.76, "vest": 0.88},
                     missing=[], indeterminate=[], status="compliant"))
 
-    # --- Other genuine violations, spread for the weekly analyst ------------
+    # --- Other genuine violations, spread across days so the zone report and
+    # --- the repeat-offender query have something to aggregate ---------------
     others = [
         (1, 11, 5,  "welding_bay",     72, {"helmet": 0.90, "gloves": 0.74, "goggles": 0.70}, ["vest"]),
         (2, 15, 40, "loading_dock",    77, {"helmet": 0.88, "boots": 0.69}, ["vest"]),

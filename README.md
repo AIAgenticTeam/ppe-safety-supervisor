@@ -34,15 +34,27 @@ cannot do, and they are why this system needs agents rather than `if` statements
 02  PERCEPTION           frame → YOLO26 → assess + zone → confirm over
     (deterministic)      time → ViolationEvent          ← NO LLM HERE
                               ↓  POST /events
-03  AGENT LAYER          Compliance Agent (per event, seconds)
-    (LangGraph)          Weekly Analyst Agent (scheduled, weekly)
-                              ↓  guardrail: stop-work needs a human
+03  AGENT LAYER          Assessor     what happened, under what rule   ← LLM
+    (LangGraph)          Adjudicator  what response is proportionate   ← LLM
+                         Recorder     commit + read back               ← no LLM
+                              ↓  guardrail: escalation needs a human
 04  STATE & INTERFACE    SQLite · local evidence store · FastAPI · Streamlit
 ```
 
 The boundary between **02** and **03** is the important one. Everything above it is
 deterministic and unit-testable; no language model touches a compliance finding. The agents
 reason about *severity and response*, never about whether a worker was wearing a helmet.
+
+Two of the three are genuinely agentic: they are given tools and choose which to call, in
+what order, and when they have enough. The Recorder is deliberately not — committing a row
+is not a judgement call, and a model that might forget to call `commit_record` loses the
+history the next escalation depends on.
+
+**There is no weekly analyst agent.** An earlier design had one, and the aggregation it was
+to perform turned out to be SQL that already exists (`by_zone`, `repeat_offenders`,
+`stats`, served by `GET /report`). Wrapping a language model around a query it cannot
+improve would have added a place for numbers to be restated wrongly in the one artefact a
+manager reads without checking. The weekly view is deterministic, and says so.
 
 `ViolationEvent` ([schema](docs/EVENT_SCHEMA.md)) is the contract across that boundary.
 
