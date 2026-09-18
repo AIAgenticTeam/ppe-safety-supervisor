@@ -186,11 +186,36 @@ def test_the_source_stem_appears_in_a_stills_event_id(monkeypatch, tmp_path):
     assert "cam3_0930" in events[0].event_id
 
 
-def test_video_ids_are_unchanged_by_the_stills_discriminator():
-    """ByteTrack ids are unique within a clip, so video needs no source component and
-    its id shape must not drift."""
+def test_make_event_id_without_a_source_is_unchanged():
+    """The bare contract, which make_fixtures.py still relies on."""
     from datetime import datetime
 
     from events import RIYADH, make_event_id
     when = datetime(2026, 9, 16, 10, 15, tzinfo=RIYADH)
     assert make_event_id("cam_3", 7, when) == "evt_20260916T101500_cam_3_t7"
+
+
+def test_two_confirmations_from_one_track_in_one_second_are_distinct():
+    """This test previously asserted the opposite, and was wrong.
+
+    It read: "ByteTrack ids are unique within a clip, so video needs no source
+    component." Track ids are indeed unique per track — but one track confirms more
+    than once, as different items cross the 8-of-10 threshold at different moments,
+    and two confirmations a fraction of a second apart round to the same timestamp.
+
+    Real footage of a concrete pour produced exactly that: boots+vest confirmed at
+    frame 111 and helmet at frame 123, both track 8, both reported at "1.0s". The
+    pipeline printed "2 events" and left one file on disk, because the second id
+    collided with the first and overwrote it — in the event store and in the evidence
+    directory both. Nothing raised.
+    """
+    from datetime import datetime
+
+    from events import RIYADH, make_event_id
+    when = datetime(2026, 9, 19, 0, 11, 21, tzinfo=RIYADH)
+
+    first = make_event_id("pour_site", 8, when, source="f111")
+    second = make_event_id("pour_site", 8, when, source="f123")
+
+    assert first != second, "one track's two confirmations must not share an id"
+    assert "f111" in first and "f123" in second, "the confirming frame is traceable"

@@ -129,7 +129,14 @@ def process_video(video_path: Path, weights: Path, zmap: ZoneMap, camera_id: str
 
         # Timestamp the finding at its position in the clip, not at wall-clock now.
         when = started + timedelta(seconds=confirmation.window_seconds)
-        event_id = make_event_id(camera_id, confirmation.track_id, when)
+        # The confirming frame is what makes this finding distinct, so it belongs in the
+        # id. A track id alone does not: one track confirms repeatedly as different
+        # items cross the threshold, and two confirmations a fraction of a second apart
+        # round to the same timestamp. A real pour produced exactly that -- boots+vest
+        # at frame 111 and helmet at frame 123, both track 8, both "1.0s" -- and the
+        # second event silently overwrote the first, on disk and in evidence.
+        event_id = make_event_id(camera_id, confirmation.track_id, when,
+                                 source=f"f{frame_index}")
 
         stored = store.save(
             event_id, frame, person.bbox,
