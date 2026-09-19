@@ -663,3 +663,51 @@ def test_a_missing_api_key_parks_the_case_instead_of_raising(monkeypatch, tmp_pa
     assert out["outcome"] == "parked"
     assert "model" in out["reason"].lower()
     assert db.get_event("evt_test_1") is not None, "the finding must survive"
+
+
+def test_an_unconfirmed_finding_is_kept_not_dropped(tmp_path):
+    """Intake rejection was the only terminal path that returned without writing.
+
+    Found by replaying a whole night's concrete pour: every event came back `review`,
+    the API answered 201 Created each time, and the database stayed empty. Refusing to
+    let a finding become an accusation is not the same as refusing to remember it — the
+    review queue is precisely where a human decides what the system could not, and it
+    cannot decide about a record that was never written.
+    """
+    db = EventStore(tmp_path / "t.db")
+    event = confirmed_event()
+    event["confirmation"]["confirmed"] = False
+
+    out = run_case(event, db, client=StubClient([]))
+
+    assert out["outcome"] == "review"
+    assert db.get_event("evt_test_1") is not None, "the finding must survive the refusal"
+    assert db.get_decision("evt_test_1") is None, "but it must not acquire a decision"
+    assert [e["event_id"] for e in db.unattributed()] == ["evt_test_1"]
+
+
+def test_a_compliant_finding_is_kept_too(tmp_path):
+    """Compliant observations are the denominator every rate is measured against, and
+    the drift monitor reads them. Dropping them silently skews both."""
+    db = EventStore(tmp_path / "t.db")
+    event = confirmed_event()
+    event["status"] = "compliant"
+    event["ppe"]["missing"] = []
+
+    out = run_case(event, db, client=StubClient([]))
+    assert out["outcome"] == "review"
+    assert db.get_event("evt_test_1") is not None
+
+
+def test_every_terminal_outcome_leaves_the_finding_on_file(tmp_path):
+    """The invariant behind all of it: whatever happens, the event is recorded."""
+    cases = {
+        "review":  lambda e: e["confirmation"].update(confirmed=False) or e,
+        "alert":   lambda e: {**e, "schema_version": "2.0"},
+        "parked":  lambda e: e,          # stub model says nothing -> no draft
+    }
+    for name, mutate in cases.items():
+        db = EventStore(tmp_path / f"{name}.db")
+        out = run_case(mutate(confirmed_event()), db, client=StubClient([]))
+        assert db.get_event("evt_test_1") is not None, (
+            f"a {out['outcome']!r} outcome dropped the finding")

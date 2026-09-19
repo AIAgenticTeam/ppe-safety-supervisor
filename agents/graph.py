@@ -115,7 +115,13 @@ def make_node_intake(db):
         verdict = run_gates(case, ENTRY_GATES)
         if not verdict:
             case.log("graph", "intake", {}, f"rejected: {verdict.reason}")
-            return {**gs, "outcome": "review", "reason": verdict.reason}
+            # Keep it. This is the only terminal path that used to return without
+            # writing, and it is the most common one on hard footage -- a whole night
+            # concrete pour produced nothing but `review`, every event was dropped, and
+            # the API still answered 201 Created. Refusing to let a finding become an
+            # accusation is not the same as refusing to remember it: the review queue
+            # is exactly where a human decides what the system could not.
+            return _park({**gs, "case": case}, db, verdict.reason, outcome="review")
         case.log("graph", "intake", {}, "accepted")
         return {**gs, "outcome": ""}
     return node_intake
