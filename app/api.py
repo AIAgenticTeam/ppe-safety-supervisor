@@ -17,6 +17,8 @@ Endpoints, grouped by who calls them:
 
     pipeline      POST /events
                   GET  /replay/{source}   POST /replay/{source}?name=
+                  POST /roster/import (CSV; a preview unless dry_run=false)
+                  POST /roster/remove
     console       GET  /queue/identification   GET /queue/approvals
                   POST /events/{id}/identity   POST /decisions/{id}/approve
                   GET  /events  /events/{id}  /events/{id}/trace
@@ -34,13 +36,14 @@ from typing import Any, Literal
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from fastapi import Body, FastAPI, HTTPException, Query  # noqa: E402
-from fastapi.responses import FileResponse  # noqa: E402
+from fastapi import Body, FastAPI, HTTPException, Query, Request  # noqa: E402
+from fastapi.responses import FileResponse, Response  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from agents.graph import run_case  # noqa: E402
 from agents.guardrails import gate_event_is_well_formed, gate_schema_understood  # noqa: E402
 from agents.state import CaseState  # noqa: E402
+from app import roster_import  # noqa: E402
 from app.db import DEFAULT_DB_PATH, EventStore, Worker  # noqa: E402
 from app.web import replay  # noqa: E402
 from app.web.routes import install as install_pages  # noqa: E402
@@ -76,6 +79,10 @@ class IdentityBinding(BaseModel):
 
 class Approval(BaseModel):
     approved_by: str = Field(min_length=1)
+
+
+class RosterRemoval(BaseModel):
+    worker_ids: list[str] = Field(min_length=1, max_length=5000)
 
 
 class WorkerIn(BaseModel):
@@ -313,6 +320,81 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
     def add_worker(worker: WorkerIn):
         db().add_worker(Worker(worker.worker_id, worker.name, worker.email, worker.role))
         return {"worker_id": worker.worker_id}
+
+    @app.post("/roster/remove", tags=["dashboard"])
+    def remove_workers(removal: RosterRemoval):
+        """Take one or more people off the roster.
+
+        Someone with no findings is deleted. Someone with findings is hidden instead
+        ("deactivated"): their history stays attributed to them and their name stays in the
+        reports, but they leave the roster and can no longer be picked. Importing their id
+        again restores them."""
+        outcome = db().remove_workers(removal.worker_ids)
+        if not outcome:
+            raise HTTPException(404, "none of those people are on the roster")
+        return {
+            "removed": len(outcome),
+            "deleted": [w for w, o in outcome.items() if o == "deleted"],
+            "deactivated": [w for w, o in outcome.items() if o == "deactivated"],
+            "not_on_roster": [w for w in dict.fromkeys(removal.worker_ids) if w not in outcome],
+        }
+
+    @app.get("/roster/template.csv", tags=["dashboard"])
+    def roster_template():
+        """A header and one example row, for whoever is about to build the file."""
+        return Response(roster_import.TEMPLATE, media_type="text/csv", headers={
+            "Content-Disposition": 'attachment; filename="roster-template.csv"'})
+
+    @app.post("/roster/import", tags=["dashboard"])
+    async def import_roster(
+            request: Request,
+            dry_run: bool = Query(True, description="preview only; nothing is written"),
+            skip_invalid: bool = Query(False, description="import the valid rows even if "
+                                                          "some rows have problems")):
+        """Add or update many people from a CSV file (the request body is the file).
+
+        A preview by default: the same parse and the same plan, with nothing written, so
+        the person sees what would change before it does. Applying is all-or-nothing --
+        one bad row blocks the import -- unless `skip_invalid` says otherwise, because a
+        half-applied roster is the outcome nobody notices until a name is missing."""
+        declared = int(request.headers.get("content-length") or 0)
+        if declared > roster_import.MAX_BYTES:
+            raise HTTPException(413, "The file is too large for a roster import.")
+        data = await request.body()
+        if len(data) > roster_import.MAX_BYTES:
+            raise HTTPException(413, "The file is too large for a roster import.")
+        try:
+            parsed = roster_import.parse(data)
+        except roster_import.RosterFileError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+        plan = roster_import.plan(parsed, db().roster())
+        status = {w.worker_id: "new" for w in plan.new}
+        status.update({w.worker_id: "updated" for w in plan.updated})
+        status.update({w.worker_id: "unchanged" for w in plan.unchanged})
+        issues = [{"row": i.row, "problem": i.problem} for i in parsed.issues]
+
+        applied = 0
+        if not dry_run:
+            if issues and not skip_invalid:
+                raise HTTPException(422, f"{len(issues)} row(s) have problems, so nothing was "
+                                         "imported. Fix them, or import the valid rows only.")
+            if not parsed.rows:
+                raise HTTPException(422, "There are no valid rows to import.")
+            applied = db().add_workers(plan.to_write)
+
+        return {
+            "dry_run": dry_run, "applied": applied,
+            "encoding": parsed.encoding,
+            "delimiter": {",": "comma", ";": "semicolon", "	": "tab", "|": "pipe"}[parsed.delimiter],
+            "columns": parsed.columns, "ignored_columns": parsed.ignored_columns,
+            "rows": len(parsed.rows) + len(issues), "valid": len(parsed.rows),
+            "new": len(plan.new), "updated": len(plan.updated), "unchanged": len(plan.unchanged),
+            "issue_count": len(issues), "issues": issues[:200],
+            "preview": [{"worker_id": w.worker_id, "name": w.name, "email": w.email,
+                         "role": w.role, "status": status[w.worker_id]}
+                        for _, w in parsed.rows[:8]],
+        }
 
     @app.get("/health", tags=["dashboard"])
     def health():

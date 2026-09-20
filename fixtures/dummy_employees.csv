@@ -1,0 +1,51 @@
+﻿worker_id,name,email,role
+DEMO-001,محمد الحربي,mohammed.alharbi@example.com,Site Supervisor
+DEMO-002,أحمد العتيبي,ahmed.alotaibi@example.com,Welder
+DEMO-003,خالد القحطاني,khalid.alqahtani@example.com,Grinder operator
+DEMO-004,عبدالله الغامدي,abdullah.alghamdi@example.com,Rigger
+DEMO-005,فهد الدوسري,fahad.aldosari@example.com,Crane operator
+DEMO-006,سعود الشمري,saud.alshammari@example.com,Scaffolder
+DEMO-007,ناصر الزهراني,nasser.alzahrani@example.com,Electrician
+DEMO-008,سلطان المطيري,sultan.almutairi@example.com,Steel fixer
+DEMO-009,تركي الشهري,turki.alshehri@example.com,Concrete finisher
+DEMO-010,بندر العنزي,bandar.alanazi@example.com,Welder
+DEMO-011,نورة السالم,noura.alsalem@example.com,Safety officer
+DEMO-012,سارة المالكي,sarah.almalki@example.com,Site engineer
+DEMO-013,يوسف البلوي,yousef.albalawi@example.com,Foreman
+DEMO-014,ماجد الرشيدي,majed.alrashidi@example.com,Plumber
+DEMO-015,عمر السبيعي,omar.alsubaie@example.com,Laborer
+DEMO-016,Ravi Kumar,ravi.kumar@example.com,Welder
+DEMO-017,Maria Santos,maria.santos@example.com,Surveyor
+DEMO-018,John Mitchell,john.mitchell@example.com,Foreman
+DEMO-019,Ahmed Hassan,ahmed.hassan@example.com,Grinder operator
+DEMO-020,Priya Nair,priya.nair@example.com,Safety officer
+DEMO-021,Carlos Mendes,carlos.mendes@example.com,Rigger
+DEMO-022,David Okafor,david.okafor@example.com,Scaffolder
+DEMO-023,Elena Petrova,elena.petrova@example.com,Site engineer
+DEMO-024,Tariq Mahmood,tariq.mahmood@example.com,Electrician
+DEMO-025,Hana Yamamoto,hana.yamamoto@example.com,Surveyor
+DEMO-026,Luis Ortega,luis.ortega@example.com,Concrete finisher
+DEMO-027,Sanjay Patel,sanjay.patel@example.com,Steel fixer
+DEMO-028,Anna Kowalski,anna.kowalski@example.com,Plumber
+DEMO-029,Bilal Chaudhry,bilal.chaudhry@example.com,Crane operator
+DEMO-030,Grace Mensah,grace.mensah@example.com,Laborer
+DEMO-031,علي الجهني,ali.aljohani@example.com,Welder
+DEMO-032,حسن البقمي,hassan.albaqami@example.com,Rigger
+DEMO-033,إبراهيم الحازمي,ibrahim.alhazmi@example.com,Grinder operator
+DEMO-034,ياسر العسيري,yasser.alasiri@example.com,Scaffolder
+DEMO-035,زياد الشريف,ziyad.alsharif@example.com,Electrician
+DEMO-036,وليد الخالدي,waleed.alkhalidi@example.com,Crane operator
+DEMO-037,منصور القرني,mansour.alqarni@example.com,Steel fixer
+DEMO-038,عادل الثقفي,adel.althaqafi@example.com,Foreman
+DEMO-039,هدى الزهراني,huda.alzahrani@example.com,Safety officer
+DEMO-040,ريم القحطاني,reem.alqahtani@example.com,Site engineer
+DEMO-041,Michael Brown,michael.brown@example.com,Site Supervisor
+DEMO-042,Aisha Khan,aisha.khan@example.com,Surveyor
+DEMO-043,Peter Nowak,peter.nowak@example.com,Welder
+DEMO-044,Sofia Rossi,sofia.rossi@example.com,Plumber
+DEMO-045,Kwame Boateng,kwame.boateng@example.com,Laborer
+DEMO-046,Mei Lin,mei.lin@example.com,Site engineer
+DEMO-047,Jose Ramirez,jose.ramirez@example.com,Concrete finisher
+DEMO-048,Fatima Ali,fatima.ali@example.com,Safety officer
+DEMO-049,Thomas Weber,thomas.weber@example.com,Electrician
+DEMO-050,Nadia Karim,nadia.karim@example.com,Grinder operator

@@ -12,29 +12,38 @@
 
     <div class="row gutter-y-30">
       <div class="col-lg-8">
-        {% if not roster %}
-          <div class="note-box note-box--warn"><p>The roster is empty, so nobody can be identified yet. Add the first person on the right.</p></div>
-        {% else %}
-        <div class="row gutter-y-30">
-          {% for w in roster %}
-          <div class="col-md-6">
-            <div class="person">
-              <div class="person__avatar">{{ (w.name or w.worker_id)[:1]|upper }}</div>
-              <div>
-                <h3 class="person__name">{{ w.name }}</h3>
-                <p class="person__id"><code>{{ w.worker_id }}</code>{% if w.role %} · {{ w.role }}{% endif %}</p>
-                {% if w.email %}<p class="person__mail">{{ w.email }}</p>{% endif %}
-              </div>
-            </div>
+        <div class="panel" data-import>
+          <div class="panel__head">
+            <h3>Import from a CSV file</h3>
+            <p>Upload your employee list instead of adding people one at a time. You will see exactly
+              what would change before anything is saved.</p>
           </div>
-          {% endfor %}
+
+          <label class="dropzone" data-dropzone>
+            <input type="file" accept=".csv,.txt,text/csv,text/plain" aria-label="Choose a CSV file">
+            <span class="dropzone__icon">{{ ico("file") }}</span>
+            <span class="dropzone__text"><strong>Choose a CSV file</strong> or drop it here</span>
+            <small>Up to 5,000 people and 1 MB. In Excel: File → Save As → <em>CSV UTF-8</em>.</small>
+          </label>
+
+          <ul class="plain plain--small">
+            <li>The first row must be a header. It needs an <code>id</code> and a <code>name</code>;
+              <code>email</code> and <code>role</code> are optional. Common spellings work
+              (<code>Employee ID</code>, <code>Full Name</code>, <code>Job Title</code>), in any column order.</li>
+            <li>Anyone already on the roster (matched by id) is <strong>updated</strong>, not duplicated,
+              and their recorded findings stay attached.</li>
+            <li>Any other column is ignored and shown to you as ignored, so a salary or a national id
+              in the file is never stored.</li>
+          </ul>
+          <a class="text-link" href="/roster/template.csv">Download a template file</a>
+
+          <div class="import-result" data-import-result aria-live="polite"></div>
         </div>
-        {% endif %}
       </div>
 
       <div class="col-lg-4">
         <form class="panel" data-roster-form novalidate>
-          <div class="panel__head"><h3>Add someone</h3></div>
+          <div class="panel__head"><h3>Add one person</h3></div>
           <div class="panel__body">
             <label class="field"><span class="label">worker id</span>
               <input class="form-control" name="worker_id" placeholder="W-0412" required></label>
@@ -45,11 +54,66 @@
             <label class="field"><span class="label">role <small>(optional)</small></span>
               <input class="form-control" name="role"></label>
             <button type="submit" class="thm-btn">{{ ico("plus", "ico--btn") }}<span>Add to roster</span></button>
-            <p class="msg" role="status"></p>
+            <output class="msg"></output>
           </div>
         </form>
       </div>
     </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mt-5 mb-3">
+      {{ section_title("Everyone", roster|length ~ (" person" if roster|length == 1 else " people")) }}
+      {% if roster %}
+      <input type="search" class="form-control roster-filter" data-roster-filter
+             placeholder="Search name, id, role or email" aria-label="Search the roster">
+      {% endif %}
+    </div>
+
+    {% if not roster %}
+      <div class="note-box note-box--warn"><p>The roster is empty, so nobody can be identified yet. Import a CSV file or add the first person above.</p></div>
+    {% else %}
+    <div class="bulk-bar" data-bulk hidden>
+      <span data-bulk-count></span>
+      <button type="button" class="thm-btn thm-btn--small" data-bulk-remove>{{ ico("trash", "ico--btn") }}<span>Remove selected</span></button>
+      <button type="button" class="link-btn" data-bulk-clear>Clear selection</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" data-roster-table>
+        <thead><tr>
+          <th class="col-pick"><input type="checkbox" data-pick-all aria-label="Select everyone shown"></th>
+          <th>id</th><th>name</th><th>role</th><th>email</th><th>findings</th><th class="col-act"></th>
+        </tr></thead>
+        <tbody>
+        {% for w in roster %}
+          {% set n = findings.get(w.worker_id, 0) %}
+          <tr data-search="{{ (w.worker_id ~ ' ' ~ w.name ~ ' ' ~ (w.role or '') ~ ' ' ~ (w.email or ''))|lower }}"
+              data-id="{{ w.worker_id }}" data-name="{{ w.name }}" data-findings="{{ n }}">
+            <td class="col-pick"><input type="checkbox" data-pick aria-label="Select {{ w.name }}"></td>
+            <td><code>{{ w.worker_id }}</code></td><td>{{ w.name }}</td>
+            <td>{{ w.role or "—" }}</td><td>{{ w.email or "—" }}</td>
+            <td>{{ n or "—" }}</td>
+            <td class="col-act"><button type="button" class="row-remove" data-remove aria-label="Remove {{ w.name }}" title="Remove">{{ ico("trash") }}</button></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <dialog class="dialog" data-remove-dialog aria-labelledby="rm-title">
+      <div class="dialog__box">
+        <h3 id="rm-title" data-rm-title></h3>
+        <div data-rm-body></div>
+        <output class="msg"></output>
+        <div class="dialog__actions">
+          <button type="button" class="thm-btn thm-btn--ghost" data-rm-cancel>Cancel</button>
+          <button type="button" class="thm-btn thm-btn--danger" data-rm-confirm>Remove</button>
+        </div>
+      </div>
+    </dialog>
+    <p class="note" data-roster-none hidden>No one matches that search.</p>
+    <div class="roster-more" data-roster-more-wrap hidden>
+      <button type="button" class="thm-btn thm-btn--ghost" data-roster-more></button>
+    </div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

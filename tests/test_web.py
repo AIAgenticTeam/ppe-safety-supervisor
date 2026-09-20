@@ -254,6 +254,27 @@ def test_the_team_page_lists_the_roster_and_offers_to_add_someone(web):
     assert "Alpha" in page and "W-1" in page and "data-roster-form" in page
 
 
+def test_the_team_page_offers_csv_import_with_a_template(web):
+    client, _, _ = web()
+    page = client.get("/team").text
+    assert "data-import" in page and 'type="file"' in page
+    assert 'href="/roster/template.csv"' in page
+    assert client.get("/roster/template.csv").status_code == 200
+
+
+def test_a_large_roster_is_searchable_and_paginated_in_the_page(web):
+    """After an import the roster can be thousands long. The page carries a search box and
+    a show-all control, and every person is in the page for search to find."""
+    client, _, _ = web(roster=False)
+    lines = ["worker_id,name"] + [f"W-{i:04d},Person {i}" for i in range(1, 251)]
+    client.post("/roster/import", params={"dry_run": "false"},
+                content="\n".join(lines).encode(), headers={"content-type": "text/csv"})
+    page = client.get("/team").text
+    assert "data-roster-filter" in page and "data-roster-more" in page
+    assert page.count("data-search=") == 250
+    assert "250 people" in page.lower()
+
+
 # ------------------------------------------------------------- replay
 
 def test_replay_lists_only_its_own_sources(web):
