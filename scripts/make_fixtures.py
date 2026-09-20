@@ -1,11 +1,11 @@
 """
 Generate a realistic set of ViolationEvents without a GPU, a model, or a camera.
 
-This is what unblocks Lanes C and D on day one. The agent graph, the Streamlit
+This is what unblocks Lanes C and D on day one. The agent graph, the supervisor
 console, the SQLite schema and the zone report can all be built and tested
 against these files today, while Lane A is still wiring the tracker.
 
-    python make_fixtures.py --out fixtures
+    python scripts/make_fixtures.py --out fixtures
 
 Produces fixtures/events/*.json and fixtures/index.json. The set deliberately
 covers every branch the agent has to handle, including the three that are easy
@@ -18,11 +18,16 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime, timedelta
+import sys
 from pathlib import Path
 
-from events import (RIYADH, Confirmation, DetectorInfo, Evidence, PPEState, Subject,
-                    ViolationEvent, ZoneRef, make_event_id)
-from zones import ZoneMap
+ROOT = Path(__file__).absolute().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from perception.events import (RIYADH, Confirmation, DetectorInfo, Evidence,  # noqa: E402
+                               PPEState, Subject, ViolationEvent, ZoneRef,
+                               make_event_id)
+from perception.zones import ZoneMap  # noqa: E402
 
 # Monday of the demo week, 07:00 local.
 WEEK_START = datetime(2026, 9, 7, 7, 0, tzinfo=RIYADH)
@@ -172,7 +177,7 @@ def build(zmap: ZoneMap) -> list[ViolationEvent]:
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--zones", default="zones.json")
+    ap.add_argument("--zones", default="config/zones.json")
     ap.add_argument("--out", default="fixtures")
     args = ap.parse_args()
 

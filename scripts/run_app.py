@@ -1,14 +1,14 @@
 """
-Start the service and the console together.
+Start the app: the service and the supervisor console, which are one process now.
 
     python scripts/run_app.py
     python scripts/run_app.py --db demo.db --seed events/run1/events/*.json
 
-Two processes, one command. Worth having for its own sake, but mostly because a demo
-that begins with "now let me open a second terminal" has already lost the room.
+One command, one port. Worth having for its own sake, but mostly because a demo that
+begins with "now let me open a second terminal" has already lost the room.
 
-The API owns the database, the model and the index. The console only renders, and finds
-the API through SAFETY_API. Ctrl-C stops both.
+The pages and the JSON API are served by the same FastAPI app (app/web/ and app/api.py),
+so there is nothing to keep in step and nothing for a page to find. Ctrl-C stops it.
 """
 
 from __future__ import annotations
@@ -25,12 +25,14 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from app.db import DEFAULT_DB_PATH  # noqa: E402
+
 PY = sys.executable
 
 
 def wait_for(url: str, seconds: float = 30.0) -> bool:
-    """Poll until the service answers. Starting the console first shows an error page
-    for as long as uvicorn takes to import torch, which is not a short time."""
+    """Poll until the service answers. Importing the agent graph is not instant, and an
+    error page for the first few seconds is a bad way to meet the app."""
     import httpx
 
     deadline = time.time() + seconds
@@ -70,16 +72,14 @@ def seed(api_url: str, patterns: list[str], judge: bool) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db", default="safety.db")
-    ap.add_argument("--api-port", type=int, default=8000)
-    ap.add_argument("--console-port", type=int, default=8501)
+    ap.add_argument("--db", default=DEFAULT_DB_PATH)
+    ap.add_argument("--port", "--api-port", dest="port", type=int, default=8000)
     ap.add_argument("--seed", nargs="*", default=[], metavar="GLOB",
                     help="event JSON to post once the service is up")
     ap.add_argument("--no-judge", action="store_true",
                     help="seed without running the agents, and spend nothing")
-    ap.add_argument("--api-only", action="store_true")
     ap.add_argument("--no-browser", action="store_true",
-                    help="do not open the console automatically")
+                    help="do not open the app automatically")
     args = ap.parse_args(argv)
 
     # Line-buffer, so the URL a person is waiting for arrives when it is printed and
@@ -90,70 +90,42 @@ def main(argv=None) -> int:
     except Exception:                   # noqa: BLE001 -- not every stream supports it
         pass
 
-    api_url = f"http://127.0.0.1:{args.api_port}"
-    env = {**os.environ, "SAFETY_DB": args.db, "SAFETY_API": api_url}
-
-    console_url = f"http://127.0.0.1:{args.console_port}"
+    url = f"http://127.0.0.1:{args.port}"
+    env = {**os.environ, "SAFETY_DB": args.db}
     print(f"\n  database   {args.db}")
 
-    procs: list[subprocess.Popen] = []
+    proc = subprocess.Popen(
+        [PY, "-m", "uvicorn", "app.api:app", "--host", "127.0.0.1", "--port", str(args.port)],
+        cwd=ROOT, env=env)
     try:
-        procs.append(subprocess.Popen(
-            [PY, "-m", "uvicorn", "app.api:app",
-             "--host", "127.0.0.1", "--port", str(args.api_port)],
-            cwd=ROOT, env=env))
-
-        if not wait_for(f"{api_url}/health"):
+        if not wait_for(f"{url}/health"):
             print("  the service did not come up; see the output above", file=sys.stderr)
             return 1
 
         if args.seed:
-            seed(api_url, args.seed, judge=not args.no_judge)
+            seed(url, args.seed, judge=not args.no_judge)
 
-        if not args.api_only:
-            procs.append(subprocess.Popen(
-                [PY, "-m", "streamlit", "run", "app/console.py",
-                 "--server.port", str(args.console_port)],
-                cwd=ROOT, env=env))
-
-        # The console is the thing a person opens; the API is the thing it talks to.
-        # Printing them the other way round sends people to the Swagger page and leaves
-        # them wondering where the application went.
         print("\n" + "=" * 58)
-        if args.api_only:
-            print(f"  API only          {api_url}/docs")
-        else:
-            print(f"  OPEN THIS  ->     {console_url}")
-            print(f"  api (not the ui)  {api_url}/docs")
+        print(f"  OPEN THIS  ->     {url}")
+        print(f"  api docs          {url}/docs")
         print("=" * 58)
 
-        if not args.api_only and not args.no_browser:
-            # Opened here rather than by Streamlit, because Streamlit only opens a
-            # browser in non-headless mode -- and non-headless is what triggers its
-            # first-run "enter your email" prompt, which blocks on any machine that has
-            # not run it before. A demo laptop is exactly that machine.
+        if not args.no_browser:
             import webbrowser
-            if wait_for(console_url, seconds=25):
-                webbrowser.open(console_url)
-            else:
-                print("  (console slow to start — open the URL above yourself)")
+            webbrowser.open(url)
 
         print("\n  Ctrl-C to stop.\n")
-        while all(p.poll() is None for p in procs):
-            time.sleep(0.5)
-        # One died on its own; do not leave the other orphaned.
-        return next((p.returncode for p in procs if p.poll() is not None), 0)
+        return proc.wait()
 
     except KeyboardInterrupt:
         return 0
     finally:
-        for p in procs:
-            if p.poll() is None:
-                p.terminate()           # SIGTERM on posix, TerminateProcess on Windows
-                try:
-                    p.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    p.kill()
+        if proc.poll() is None:
+            proc.terminate()            # SIGTERM on posix, TerminateProcess on Windows
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
 
 if __name__ == "__main__":

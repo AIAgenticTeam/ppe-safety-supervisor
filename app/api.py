@@ -3,20 +3,20 @@ The service layer: FastAPI between the pipeline and the console.
 
 Lane A posts findings, the agent graph judges them, the supervisor console reads queues
 and sends back the two things only a human may decide -- who this was, and whether an
-escalation goes out.
+escalation goes out. The console is a set of server-rendered pages (app/web/) served by
+this same app, so one process and one port -- open http://127.0.0.1:8000/.
 
     uvicorn app.api:app --reload
     python -m app.api                      # same thing, with the banner
 
-Why a service at all, when Streamlit could import the graph directly: the console then
-holds an OpenAI key, a FAISS index and a YOLO checkpoint in the same process as the UI,
-and every rerun of a Streamlit script re-executes the module top to bottom. Putting the
-seam here keeps the expensive, stateful half in one place and makes the console a thing
-that only renders.
+The pages read the event store directly, but never decide anything themselves: identity,
+approval, roster and replay are all written through the JSON endpoints below, so the
+human gate has exactly one implementation and the tests cover it.
 
 Endpoints, grouped by who calls them:
 
     pipeline      POST /events
+                  GET  /replay/{source}   POST /replay/{source}?name=
     console       GET  /queue/identification   GET /queue/approvals
                   POST /events/{id}/identity   POST /decisions/{id}/approve
                   GET  /events  /events/{id}  /events/{id}/trace
@@ -41,9 +41,11 @@ from pydantic import BaseModel, Field  # noqa: E402
 from agents.graph import run_case  # noqa: E402
 from agents.guardrails import gate_event_is_well_formed, gate_schema_understood  # noqa: E402
 from agents.state import CaseState  # noqa: E402
-from app.db import EventStore, Worker  # noqa: E402
+from app.db import DEFAULT_DB_PATH, EventStore, Worker  # noqa: E402
+from app.web import replay  # noqa: E402
+from app.web.routes import install as install_pages  # noqa: E402
 
-DEFAULT_DB = os.getenv("SAFETY_DB", "safety.db")
+DEFAULT_DB = os.getenv("SAFETY_DB", DEFAULT_DB_PATH)
 
 # The key lives in .env, which is gitignored. Loaded here because this process is the
 # one that calls the model -- scripts/run_agents.py loaded it for its own process and
@@ -172,6 +174,23 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
         out = run_case(event, db(), client=app.state.client, model=app.state.model)
         return _case_summary(out["case"], out.get("outcome", ""), out.get("reason", ""))
 
+    # ---- replay ---------------------------------------------------------
+
+    @app.get("/replay/{source}", tags=["pipeline"])
+    def replay_list(source: str):
+        """Event files this source offers. A fixed allowlist, not a path from the client."""
+        return {"source": source, "files": replay.list_files(source)}
+
+    @app.post("/replay/{source}", tags=["pipeline"])
+    def replay_one(source: str, name: str = Query(...),
+                   judge: bool = Query(True, description="run the agents now")):
+        """Post one listed event file through the real intake, one at a time so the
+        page can show progress -- judging is a model call and 20 of them are not quick."""
+        event = replay.load(source, name)
+        if event is None:
+            raise HTTPException(404, "not a replayable file")
+        return post_event(event, judge)
+
     # ---- the console's two queues ---------------------------------------
 
     @app.get("/queue/identification", tags=["console"])
@@ -299,6 +318,7 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
     def health():
         return {"status": "ok", "db": db().path, "events": db().stats()["events"]}
 
+    install_pages(app)
     return app
 
 

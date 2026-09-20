@@ -9,7 +9,7 @@ main                 always runs; protected; PRs only
 lane-a/<thing>       perception    e.g. lane-a/bytetrack-confirmation
 lane-b/<thing>       knowledge     e.g. lane-b/osha-ingest
 lane-c/<thing>       agents        e.g. lane-c/compliance-graph
-lane-d/<thing>       app + docs    e.g. lane-d/streamlit-console
+lane-d/<thing>       app + docs    e.g. lane-d/console-pages
 ```
 
 ```bash
@@ -26,7 +26,7 @@ Small PRs. A PR that touches three lanes is a PR nobody reviews properly with tw
 
 1. **Never commit datasets, weights, videos, or `.env`.** `.gitignore` covers them. If you
    find yourself using `git add -f`, stop and ask. A 667 MB zip in git history is permanent.
-2. **`events.py` is frozen.** Changing `ViolationEvent` breaks all four lanes at once. To
+2. **`perception/events.py` is frozen.** Changing `ViolationEvent` breaks all four lanes at once. To
    change it: bump `SCHEMA_VERSION`, update `docs/EVENT_SCHEMA.md`, regenerate fixtures,
    announce it. Never silently.
 3. **Tests pass before you open a PR.** `python -m pytest tests -q`

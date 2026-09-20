@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Architecture", "How a frame becomes a decision") }}
+    <ol class="steps">
+      <li><span class="steps__n">01</span><div><h3>Offline setup</h3>
+        <p>Zone polygons and per-zone PPE requirements, a clause map, and the OSHA text indexed for retrieval.</p></div></li>
+      <li><span class="steps__n">02</span><div><h3>Perception <small>deterministic · no LLM</small></h3>
+        <p>frame → detector → assessment + zone → confirmation over time → a <code>ViolationEvent</code>.
+           Everything up to here is unit-testable; no language model touches a compliance finding.</p></div></li>
+      <li><span class="steps__n">03</span><div><h3>Agent layer</h3>
+        <p><strong>Assessor</strong> says what happened and under what rule. <strong>Adjudicator</strong> picks the proportionate
+           response. <strong>Recorder</strong> commits and reads back — deliberately not an agent, because committing a row is not a
+           judgement call. A guardrail stops any escalation without a human.</p></div></li>
+      <li><span class="steps__n">04</span><div><h3>State &amp; interface</h3>
+        <p>SQLite, a local evidence store, this service, and these pages.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="pg-section pg-section--tint">
+  <div class="container">
+    {{ section_title("Detector", "Recall is the number that matters, not mAP") }}
+    <div class="row gutter-y-30 align-items-start">
+      <div class="col-lg-6">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>class</th><th>mAP50</th><th>recall</th></tr></thead>
+            <tbody>
+              <tr><td>helmet</td><td>0.860</td><td>0.796</td></tr>
+              <tr><td>vest</td><td>0.854</td><td>0.816</td></tr>
+              <tr><td>boots</td><td>0.795</td><td>0.742</td></tr>
+              <tr><td>goggles</td><td>0.789</td><td>0.723</td></tr>
+              <tr><td>gloves</td><td>0.775</td><td>0.733</td></tr>
+              <tr><td>Person</td><td>0.911</td><td>0.867</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">YOLO26s at 960px, six presence classes.</p>
+      </div>
+      <div class="col-lg-6">
+        <p>At helmet recall 0.796, roughly one worn helmet in five is not detected. Single-frame
+           escalation would therefore mislabel a compliant worker about 20% of the time.</p>
+        <p>That is why a violation must be sustained across a tracked window before it becomes
+           actionable, and why the measured per-class recall ships inside every event — so the agent
+           can weigh an absence appropriately.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Honesty", "Known limitations") }}
+    <ul class="ticks">
+      <li><strong>Worker identity does not persist.</strong> Tracker IDs do not survive a session, a camera
+        hand-off, or a worker leaving frame. "Third time this week" therefore cannot come from tracking
+        alone — a supervisor binds the name, on the <a href="/identify">Identify</a> page.</li>
+      <li><strong>Domain gap.</strong> The detector is trained on a construction-PPE dataset (1,416 images).
+        Other camera angles, lighting and mounting heights will do worse — which is what
+        <a href="/monitoring">Monitoring</a> watches for.</li>
+      <li><strong>No dedicated hi-vis or hand-protection clause in construction.</strong> Scope is 29 CFR 1926.
+        Vest and glove findings cite site policy supported by 1926.95's hazard-assessment duty, and say so
+        rather than inventing a clause.</li>
+      <li><strong>Small-object localisation is capped by label quality.</strong> mAP50-95 sat near 0.435 across
+        four training configurations.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

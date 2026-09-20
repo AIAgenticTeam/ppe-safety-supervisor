@@ -1,7 +1,7 @@
 """
 Drift monitoring over the event store, with Evidently.
 
-    python -m app.monitoring --db safety.db --out drift.html
+    python -m app.monitoring --db data/safety.db --out drift.html
 
 The question this answers is narrow and it is the one that matters for this system:
 **has the detector walked off the distribution it was trained on?**
@@ -46,7 +46,7 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.db import EventStore  # noqa: E402
+from app.db import DEFAULT_DB_PATH, EventStore  # noqa: E402
 
 # Below this, a drift verdict is noise wearing a p-value.
 MIN_ROWS = 20
@@ -294,7 +294,7 @@ def main(argv=None) -> int:
 
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db", default="safety.db")
+    ap.add_argument("--db", default=DEFAULT_DB_PATH)
     ap.add_argument("--days", type=int, default=7,
                     help="findings newer than this are the current window")
     ap.add_argument("--out", default="", help="write the full Evidently report here")

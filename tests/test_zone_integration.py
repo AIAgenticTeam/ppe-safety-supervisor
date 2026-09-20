@@ -15,9 +15,9 @@ import pytest
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from events import Confirmation, build_event  # noqa: E402
-from ppe_compliance import Policy, assess_detections  # noqa: E402
-from zones import ZoneMap  # noqa: E402
+from perception.events import Confirmation, build_event  # noqa: E402
+from perception.ppe_compliance import Policy, assess_detections  # noqa: E402
+from perception.zones import ZoneMap  # noqa: E402
 
 NAMES = {0: "helmet", 1: "gloves", 2: "vest", 3: "boots", 4: "goggles", 5: "Person"}
 W, H = 1280, 720
@@ -43,7 +43,7 @@ def worker_without_gloves(person_box):
 
 @pytest.fixture(scope="module")
 def zmap():
-    return ZoneMap.load(ROOT / "zones.json")
+    return ZoneMap.load(ROOT / "config" / "zones.json")
 
 
 # ------------------------------------------------------------------ the thesis

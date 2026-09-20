@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-2">
+      {{ section_title("Report", "The last " ~ days ~ " day" ~ ("" if days == 1 else "s")) }}
+      <nav class="seg" aria-label="Window">
+        {% for d in (1, 7, 30, 90) %}<a href="/weekly?days={{ d }}" class="{{ 'is-on' if d == days }}">{{ d }}d</a>{% endfor %}
+      </nav>
+    </div>
+    <p class="lead-note">
+      Deterministic aggregation, not an agent. Zone counts need no identity at all — and are arguably
+      the more actionable number, because you fix the zone, not the person.
+    </p>
+
+    <div class="tiles tiles--4">
+      <div class="tile"><div class="tile__value">{{ stats.events }}</div><div class="tile__label">Findings</div></div>
+      <div class="tile"><div class="tile__value">{{ stats.actionable }}</div><div class="tile__label">Confirmed</div></div>
+      <div class="tile"><div class="tile__value">{{ stats.unattributed }}</div><div class="tile__label">Unattributed</div></div>
+      <div class="tile"><div class="tile__value">{{ stats.decisions }}</div><div class="tile__label">Decisions</div></div>
+    </div>
+
+    <h4 class="label mt-5">where findings happen</h4>
+    {% if not zones %}
+      <div class="note-box"><p>Nothing in this window.</p></div>
+    {% else %}
+      {# A bar chart of one category is a rectangle, and a rectangle is not a finding. #}
+      {% if zones|length > 1 %}
+      <div class="bars" role="img" aria-label="Confirmed findings by zone">
+        {% for z in zones %}
+        <div class="bars__row">
+          <span class="bars__label">{{ z.label }}</span>
+          <span class="bars__track"><span class="bars__fill" style="width: {{ z.pct }}%"></span></span>
+          <span class="bars__n">{{ z.confirmed }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>zone</th><th>confirmed</th><th>all findings</th></tr></thead>
+          <tbody>{% for z in zones %}<tr><td>{{ z.label }}</td><td>{{ z.confirmed }}</td><td>{{ z.all }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <h4 class="label mt-5">repeat offenders</h4>
+    {% if repeats %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>worker</th><th>name</th><th>violations</th></tr></thead>
+          <tbody>{% for r in repeats %}<tr><td>{{ r.worker_id }}</td><td>{{ r.name }}</td><td>{{ r.violations }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="note">None — which may mean nobody repeated, or may mean findings have not been identified yet.
+        Those are different things, and the <a href="/identify">Identify</a> page is where the second one is fixed.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

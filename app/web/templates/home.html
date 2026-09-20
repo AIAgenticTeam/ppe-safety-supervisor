@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, chip, severity_chip, section_title %}
+
+{% block banner %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center gutter-y-30">
+      <div class="col-xl-7 col-lg-7">
+        <div class="hero__tagline"><span></span>Autonomous Industrial Safety Supervisor</div>
+        <h1 class="hero__title">A detection is <em>not</em> a violation.</h1>
+        <p class="hero__text">
+          A camera pipeline detects PPE. A deterministic layer decides whether a violation
+          actually occurred, given where the worker is standing. Agents then judge severity
+          against the governing regulation, remember patterns over time, and escalate only
+          what a human approves.
+        </p>
+        <div class="hero__actions">
+          <a href="/approvals" class="thm-btn">Review approvals{% if n_approve %} · {{ n_approve }}{% endif %}</a>
+          <a href="/identify" class="thm-btn thm-btn--ghost">Identify findings{% if n_identify %} · {{ n_identify }}{% endif %}</a>
+        </div>
+      </div>
+      <div class="col-xl-5 col-lg-5">
+        <div class="hero__card">
+          <h3>Same detection, three responses</h3>
+          <ul class="idea">
+            <li><span class="idea__obs">no gloves</span><span class="idea__zone">walkway</span>
+                <span class="idea__out idea__out--quiet">ignored</span>
+                <p>Only a helmet is required here.</p></li>
+            <li><span class="idea__obs">no gloves</span><span class="idea__zone">grinding station</span>
+                <span class="idea__out idea__out--warn">ticket</span>
+                <p>Abrasive wheel — hand protection is mandatory.</p></li>
+            <li><span class="idea__obs">no gloves, third time this week</span><span class="idea__zone">grinding station</span>
+                <span class="idea__out idea__out--stop">stop-work escalation</span>
+                <p>Pending human approval.</p></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="pg-section pg-section--tight">
+  <div class="container">
+    <div class="tiles tiles--4">
+      <a class="tile tile--link" href="/findings"><div class="tile__icon">{{ ico("camera") }}</div>
+        <div class="tile__value">{{ stats.events }}</div><div class="tile__label">Findings</div></a>
+      <a class="tile tile--link" href="/findings"><div class="tile__icon">{{ ico("shield") }}</div>
+        <div class="tile__value">{{ stats.actionable }}</div><div class="tile__label">Confirmed</div></a>
+      <a class="tile tile--link" href="/identify"><div class="tile__icon">{{ ico("user") }}</div>
+        <div class="tile__value">{{ stats.unattributed }}</div><div class="tile__label">Unattributed</div></a>
+      <a class="tile tile--link" href="/approvals"><div class="tile__icon">{{ ico("clipboard") }}</div>
+        <div class="tile__value">{{ stats.decisions }}</div><div class="tile__label">Decisions</div></a>
+    </div>
+  </div>
+</section>
+
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("How a finding moves", "Three layers, one human gate", "center") }}
+    <div class="row gutter-y-30">
+      <div class="col-lg-4 col-md-6">
+        <div class="feature">
+          <div class="feature__icon">{{ ico("eye") }}</div>
+          <h3 class="feature__title">Perception</h3>
+          <p class="feature__text">Frame → detector → zone-aware assessment → temporal confirmation → a
+             <code>ViolationEvent</code>. Deterministic and unit-testable: no language model touches a compliance finding.</p>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="feature">
+          <div class="feature__icon">{{ ico("file") }}</div>
+          <h3 class="feature__title">Agents</h3>
+          <p class="feature__text">An assessor cites what happened under which rule; an adjudicator picks a proportionate
+             response; a recorder commits and reads back. They reason about severity, never about whether a helmet was worn.</p>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="feature">
+          <div class="feature__icon">{{ ico("user") }}</div>
+          <h3 class="feature__title">A supervisor</h3>
+          <p class="feature__text">The vision system never says who someone is, and the agents never send an escalation.
+             Both are a person's call — on the <a href="/identify">Identify</a> and <a href="/approvals">Approvals</a> pages.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pg-section pg-section--tint">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      {{ section_title("Latest", "Recent findings") }}
+      <a href="/findings" class="thm-btn thm-btn--ghost">All findings</a>
+    </div>
+    {% if not recent %}
+      <div class="note-box"><p>No findings yet. Replay some from the <a href="/findings">Findings</a> page.</p></div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="data-table data-table--links">
+        <thead><tr><th>when</th><th>camera</th><th>zone</th><th>missing</th><th>confirmed</th><th>action</th></tr></thead>
+        <tbody>
+        {% for r in recent %}
+          <tr onclick="location.href='/findings/{{ r.event_id }}'">
+            <td>{{ r.captured_at|stamp }}</td><td>{{ r.camera_id }}</td><td>{{ r.zone }}</td>
+            <td>{{ r.missing|join(", ") or "—" }}</td>
+            <td>{{ "yes" if r.actionable else "no" }}</td>
+            <td>{{ (r.action|action_label) if r.action else "—" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <div class="cta-band__inner">
+      <div>
+        <h2>{% if n_approve %}{{ n_approve }} escalation{{ "" if n_approve == 1 else "s" }} waiting for a signature{% else %}Nothing awaiting approval{% endif %}</h2>
+        <p>Nothing leaves this system without a signature. The system drafts; a supervisor decides.</p>
+      </div>
+      <a href="/approvals" class="thm-btn thm-btn--dark">Open approvals</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

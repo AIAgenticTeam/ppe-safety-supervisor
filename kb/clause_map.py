@@ -199,7 +199,8 @@ class ClauseMap:
 
     # ---- self-check -----------------------------------------------------
 
-    def check_against_zones(self, zones_path: str | Path = ROOT / "zones.json") -> list[str]:
+    def check_against_zones(
+            self, zones_path: str | Path = ROOT / "config" / "zones.json") -> list[str]:
         """Do zones.json and this file agree about every zone?
 
         They each hold half the truth -- zones.json says what a zone requires, this file

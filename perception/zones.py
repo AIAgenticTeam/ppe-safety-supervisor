@@ -12,8 +12,8 @@ the box centre. A worker leaning over a machine has a box that overlaps three
 zones; their feet are in one.
 
 Usage:
-    from zones import ZoneMap
-    zmap = ZoneMap.load("zones.json")
+    from perception.zones import ZoneMap
+    zmap = ZoneMap.load("config/zones.json")
     zone = zmap.locate("cam_3", person_bbox)      # -> Zone or None
     zone.required_ppe                              # -> ("helmet", "gloves", "goggles")
 """
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     import argparse
 
     ap = argparse.ArgumentParser(description="Validate a zone config, or draw it on a frame")
-    ap.add_argument("config", help="zones.json")
+    ap.add_argument("config", help="zone config, e.g. config/zones.json")
     ap.add_argument("--overlay", nargs=3, metavar=("FRAME", "CAMERA_ID", "OUT"),
                     help="render zones over a real frame")
     args = ap.parse_args()

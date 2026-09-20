@@ -17,21 +17,21 @@ import pytest
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from events import SCHEMA_VERSION, ViolationEvent  # noqa: E402
-from zones import ZoneMap  # noqa: E402
+from perception.events import SCHEMA_VERSION, ViolationEvent  # noqa: E402
+from perception.zones import ZoneMap  # noqa: E402
 
 FIXTURES = sorted((ROOT / "fixtures" / "events").glob("*.json"))
 
 
 @pytest.fixture(scope="module")
 def zmap():
-    return ZoneMap.load(ROOT / "zones.json")
+    return ZoneMap.load(ROOT / "config" / "zones.json")
 
 
 # --------------------------------------------------------------------- zones
 
 def test_zone_config_is_valid(zmap):
-    assert zmap.validate() == [], "zones.json has problems; run `python zones.py zones.json`"
+    assert zmap.validate() == [], "zones.json has problems; run `python -m perception.zones config/zones.json`"
 
 
 def test_person_located_by_feet_not_box_centre(zmap):
@@ -74,7 +74,7 @@ def test_unknown_camera_raises(zmap):
 # -------------------------------------------------------------------- events
 
 def test_fixtures_exist():
-    assert len(FIXTURES) >= 20, "run `python make_fixtures.py --out fixtures`"
+    assert len(FIXTURES) >= 20, "run `python scripts/make_fixtures.py --out fixtures`"
 
 
 @pytest.mark.parametrize("path", FIXTURES, ids=lambda p: p.stem)

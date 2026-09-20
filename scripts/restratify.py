@@ -12,7 +12,7 @@ re-partition with multi-label stratification, so each split gets a proportional 
 of every class's instances.
 
 Usage:
-    python restratify.py /workspace/datasets/ppe-presence \
+    python scripts/restratify.py /workspace/datasets/ppe-presence \
         --out /workspace/datasets/ppe-strat --ratios 0.70 0.15 0.15
 
     # then train against /workspace/datasets/ppe-strat/data.yaml

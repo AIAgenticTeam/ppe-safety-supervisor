@@ -17,8 +17,8 @@ import pytest
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from ppe_compliance import Policy, assess_detections  # noqa: E402
-from zones import ZoneMap  # noqa: E402
+from perception.ppe_compliance import Policy, assess_detections  # noqa: E402
+from perception.zones import ZoneMap  # noqa: E402
 
 NAMES = {0: "helmet", 1: "gloves", 2: "vest", 3: "boots", 4: "goggles", 5: "Person"}
 W, H = 586, 480                       # the CCTV segment's real frame size
@@ -45,12 +45,12 @@ def worker_with_helmet_and_vest():
 
 @pytest.fixture(scope="module")
 def real():
-    return ZoneMap.load(ROOT / "zones.json")
+    return ZoneMap.load(ROOT / "config" / "zones.json")
 
 
 @pytest.fixture(scope="module")
 def test_cfg():
-    return ZoneMap.load(ROOT / "zones.test.json")
+    return ZoneMap.load(ROOT / "config" / "zones.test.json")
 
 
 # ------------------------------------------------------- the production config

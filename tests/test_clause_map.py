@@ -200,7 +200,7 @@ def test_every_zone_has_camera_scoped_weights(cm):
     import json
     from pathlib import Path
 
-    raw = json.loads((ROOT / "zones.json").read_text(encoding="utf-8"))
+    raw = json.loads((ROOT / "config" / "zones.json").read_text(encoding="utf-8"))
     for cam_id, cam in raw["cameras"].items():
         for zone in cam["zones"]:
             key = f"{cam_id}/{zone['name']}"

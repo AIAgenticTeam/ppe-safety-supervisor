@@ -1,12 +1,12 @@
 """
 frame -> detections -> zone-aware assessment -> ViolationEvent
 
-The live path. Produces exactly the same JSON shape as `make_fixtures.py`, so
+The live path. Produces exactly the same JSON shape as `scripts/make_fixtures.py`, so
 anything built against `fixtures/` works unchanged against real footage.
 
-    python pipeline.py clip.mp4    --camera cam_3 --out events/   # video, tracked
-    python pipeline.py frame.jpg   --camera cam_3                 # one still
-    python pipeline.py footage/    --camera cam_3                 # a folder of stills
+    python -m perception.pipeline clip.mp4   --camera cam_3 --out events/   # video, tracked
+    python -m perception.pipeline frame.jpg  --camera cam_3                 # one still
+    python -m perception.pipeline footage/   --camera cam_3                 # a folder of stills
 
 Two modes, and the difference is not cosmetic:
 
@@ -25,14 +25,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
-from events import (RIYADH, Confirmation, Evidence, ViolationEvent, build_event,
-                    make_event_id)
-from evidence import EvidenceStore
-from ppe_compliance import Policy, assess_detections
-from zones import ZoneMap
+ROOT = Path(__file__).absolute().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from perception.events import (RIYADH, Confirmation, Evidence, ViolationEvent,  # noqa: E402
+                               build_event, make_event_id)
+from perception.evidence import EvidenceStore  # noqa: E402
+from perception.ppe_compliance import Policy, assess_detections  # noqa: E402
+from perception.zones import ZoneMap  # noqa: E402
 
 IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_EXT = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -114,7 +118,7 @@ def process_video(video_path: Path, weights: Path, zmap: ZoneMap, camera_id: str
     """
     from datetime import timedelta
 
-    from tracking import track_video
+    from perception.tracking import track_video
 
     store = EvidenceStore(out_dir / "evidence")
     events: list[ViolationEvent] = []
@@ -170,7 +174,7 @@ def main() -> None:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("source", help="a video, an image, or a directory of frames")
     ap.add_argument("--camera", required=True, help="camera id in the zone config")
-    ap.add_argument("--zones", default="zones.json")
+    ap.add_argument("--zones", default="config/zones.json")
     ap.add_argument("--weights", default="weights/best.pt")
     ap.add_argument("--out", default="events")
     ap.add_argument("--imgsz", type=int, default=None,

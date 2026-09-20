@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from tracking import TemporalConfirmer, TrackHistory, Observation  # noqa: E402
+from perception.tracking import TemporalConfirmer, TrackHistory, Observation  # noqa: E402
 
 
 def feed(confirmer, track_id, frames, start=0):
