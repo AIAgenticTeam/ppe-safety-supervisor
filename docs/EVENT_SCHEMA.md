@@ -13,7 +13,7 @@ someone has wasted an afternoon.
 A machine-readable JSON Schema is exported as `events.JSON_SCHEMA`. Use it in tests:
 
 ```python
-from events import JSON_SCHEMA
+from perception.events import JSON_SCHEMA
 import jsonschema, json
 jsonschema.validate(json.load(open("fixtures/events/....json")), JSON_SCHEMA)
 ```
