@@ -24,8 +24,8 @@ sys.path.insert(0, str(ROOT))
 cv2 = pytest.importorskip("cv2", reason="needs opencv; install into .venv")
 import numpy as np  # noqa: E402
 
-import pipeline  # noqa: E402
-from zones import Zone  # noqa: E402
+from perception import pipeline  # noqa: E402
+from perception.zones import Zone  # noqa: E402
 
 
 class FakeAssessment:
@@ -72,11 +72,11 @@ def run(monkeypatch, tmp_path, still):
     def _run(missing=("helmet",)):
         monkeypatch.setattr(pipeline, "assess_detections",
                             lambda *a, **k: ([FakeAssessment(missing)], []))
-        from ppe_compliance import Policy
-        from zones import ZoneMap
+        from perception.ppe_compliance import Policy
+        from perception.zones import ZoneMap
         out = tmp_path / "out"
         events = pipeline.process_image(
-            FakeModel(), still, ZoneMap.load(ROOT / "zones.json"), "cam_3",
+            FakeModel(), still, ZoneMap.load(ROOT / "config" / "zones.json"), "cam_3",
             Policy(), out)
         return events, out
     return _run
@@ -151,14 +151,14 @@ def test_frames_sharing_a_timestamp_do_not_collapse_into_one_event(
 
     monkeypatch.setattr(pipeline, "assess_detections",
                         lambda *a, **k: ([FakeAssessment(("helmet",))], []))
-    from ppe_compliance import Policy
-    from zones import ZoneMap
+    from perception.ppe_compliance import Policy
+    from perception.zones import ZoneMap
 
     out = tmp_path / "out"
     ids, evidence_paths = [], []
     for path in frames:
         for event in pipeline.process_image(
-                FakeModel(), path, ZoneMap.load(ROOT / "zones.json"), "cam_3",
+                FakeModel(), path, ZoneMap.load(ROOT / "config" / "zones.json"), "cam_3",
                 Policy(), out):
             ids.append(event.event_id)
             evidence_paths.append(event.evidence.crop_path)
@@ -177,11 +177,11 @@ def test_the_source_stem_appears_in_a_stills_event_id(monkeypatch, tmp_path):
 
     monkeypatch.setattr(pipeline, "assess_detections",
                         lambda *a, **k: ([FakeAssessment(("helmet",))], []))
-    from ppe_compliance import Policy
-    from zones import ZoneMap
+    from perception.ppe_compliance import Policy
+    from perception.zones import ZoneMap
 
     events = pipeline.process_image(FakeModel(), path,
-                                    ZoneMap.load(ROOT / "zones.json"), "cam_3",
+                                    ZoneMap.load(ROOT / "config" / "zones.json"), "cam_3",
                                     Policy(), tmp_path / "out")
     assert "cam3_0930" in events[0].event_id
 
@@ -190,7 +190,7 @@ def test_make_event_id_without_a_source_is_unchanged():
     """The bare contract, which make_fixtures.py still relies on."""
     from datetime import datetime
 
-    from events import RIYADH, make_event_id
+    from perception.events import RIYADH, make_event_id
     when = datetime(2026, 9, 16, 10, 15, tzinfo=RIYADH)
     assert make_event_id("cam_3", 7, when) == "evt_20260916T101500_cam_3_t7"
 

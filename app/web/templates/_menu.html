@@ -1,0 +1,26 @@
+<ul class="main-menu__list">
+  <li class="{{ 'current' if active == 'home' }}"><a href="/">Overview</a></li>
+  <li class="dropdown {{ 'current' if active in ('identify', 'approvals') }}">
+    <a href="#">Queues</a>
+    <ul>
+      <li class="{{ 'current' if active == 'identify' }}">
+        <a href="/identify">Identify{% if n_identify %} <span class="menu-badge">{{ n_identify }}</span>{% endif %}</a>
+      </li>
+      <li class="{{ 'current' if active == 'approvals' }}">
+        <a href="/approvals">Approvals{% if n_approve %} <span class="menu-badge">{{ n_approve }}</span>{% endif %}</a>
+      </li>
+    </ul>
+  </li>
+  <li class="{{ 'current' if active == 'findings' }}"><a href="/findings">Findings</a></li>
+  <li class="{{ 'current' if active == 'weekly' }}"><a href="/weekly">Weekly report</a></li>
+  <li class="{{ 'current' if active == 'monitoring' }}"><a href="/monitoring">Monitoring</a></li>
+  <li class="{{ 'current' if active == 'team' }}"><a href="/team">Team</a></li>
+  <li class="dropdown {{ 'current' if active in ('about', 'faq') }}">
+    <a href="#">About</a>
+    <ul>
+      <li class="{{ 'current' if active == 'about' }}"><a href="/about">How it works</a></li>
+      <li class="{{ 'current' if active == 'faq' }}"><a href="/faq">FAQ</a></li>
+      <li><a href="/docs">API docs</a></li>
+    </ul>
+  </li>
+</ul>

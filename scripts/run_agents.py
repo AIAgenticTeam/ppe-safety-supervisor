@@ -1,7 +1,7 @@
 """
 Run the agent graph over events Lane A produced.
 
-    python scripts/run_agents.py events/run1/events/*.json --db safety.db
+    python scripts/run_agents.py events/run1/events/*.json --db data/safety.db
 
 Lane A writes event JSON; this reads it and runs the three agents over each one. It is
 the seam between the two halves of the system, and the thing Lane D's API will wrap.
@@ -9,7 +9,7 @@ the seam between the two halves of the system, and the thing Lane D's API will w
 Identity is supplied here, never inferred. A supervisor who has recognised someone
 passes it explicitly:
 
-    python scripts/run_agents.py evt.json --db safety.db --bind W-0412 --by khalid
+    python scripts/run_agents.py evt.json --db data/safety.db --bind W-0412 --by khalid
 
 Without that, the case runs to a decision and is recorded unattributed -- which is the
 correct outcome, not a degraded one.
@@ -30,7 +30,7 @@ ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from agents.graph import run_case  # noqa: E402
-from app.db import EventStore, Worker  # noqa: E402
+from app.db import DEFAULT_DB_PATH, EventStore, Worker  # noqa: E402
 
 BANNER = {"done": "closed", "review": "sent to review", "parked": "parked",
           "alert": "ALERT"}
@@ -75,7 +75,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("events", nargs="+", help="event JSON files (globs accepted)")
-    ap.add_argument("--db", default="safety.db")
+    ap.add_argument("--db", default=DEFAULT_DB_PATH)
     ap.add_argument("--model", default="gpt-4o-mini")
     ap.add_argument("--bind", help="worker id a supervisor has identified")
     ap.add_argument("--by", default="", help="who made that identification")

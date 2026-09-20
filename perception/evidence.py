@@ -24,10 +24,14 @@ later means changing this file and nothing else.
 from __future__ import annotations
 
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from events import Evidence
+ROOT = Path(__file__).absolute().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from perception.events import Evidence  # noqa: E402
 
 # Drawn in BGR, since frames arrive from OpenCV.
 BOX_PERSON = (200, 90, 240)      # violet

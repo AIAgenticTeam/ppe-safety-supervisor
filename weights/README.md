@@ -31,6 +31,6 @@ gh release create v1-detector weights/best.pt --notes "YOLO26s @960, 6 presence 
 | test mAP50-95 | 0.433 |
 | trained | early stop at epoch 66 of 200, patience 50 |
 
-Per-class recall is recorded in `events.py::DETECTOR_RECALL` and ships inside every
+Per-class recall is recorded in `perception/events.py::DETECTOR_RECALL` and ships inside every
 event. **If you retrain, update that table** — the agent uses it to weigh how much
 an absent detection is worth.

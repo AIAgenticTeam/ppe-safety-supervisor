@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+{% from "_ui.html" import ico %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} || Safety Supervisor</title>
+  <meta name="description" content="PPE findings, judged against 29 CFR 1926 and cited. Nothing leaves without a signature.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Titillium+Web:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/module-css/footer.css">
+  <link rel="stylesheet" href="/static/css/module-css/page-header.css">
+  <link rel="stylesheet" href="/static/css/module-css/error-page.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+{% include "_sprite.html" %}
+
+<div class="page-wrapper">
+
+  <header class="main-header">
+    <div class="main-menu__top">
+      <div class="main-menu__top-inner">
+        <ul class="list-unstyled main-menu__contact-list">
+          <li>
+            <div class="icon"><i>{{ ico("pulse") }}</i></div>
+            <div class="text"><p>Service up · {{ stats.events }} finding{{ "" if stats.events == 1 else "s" }}</p></div>
+          </li>
+          <li>
+            <div class="icon"><i>{{ ico("database") }}</i></div>
+            <div class="text"><p>{{ db_name }}</p></div>
+          </li>
+        </ul>
+        <div class="main-menu__top-right">
+          <div class="main-menu__social">
+            <a href="/docs">API docs</a>
+            <a href="/about">29 CFR 1926</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="main-menu">
+      <div class="main-menu__wrapper">
+        <div class="main-menu__wrapper-inner">
+          <div class="main-menu__left">
+            <div class="main-menu__logo">
+              <a class="brand" href="/">
+                <span class="brand__mark">{{ ico("shield") }}</span>
+                <span class="brand__name">Safety <b>Supervisor</b></span>
+              </a>
+            </div>
+            <div class="main-menu__main-menu-box">
+              <a href="#" class="mobile-nav__toggler" aria-label="Open menu">{{ ico("menu") }}</a>
+              {% include "_menu.html" %}
+            </div>
+          </div>
+          <div class="main-menu__right">
+            <div class="main-menu__search-and-btn-box">
+              <div class="main-menu__btn-box">
+                <a href="/approvals" class="main-menu__btn thm-btn">Approvals{% if n_approve %} · {{ n_approve }}{% endif %}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="stricky-header stricked-menu main-menu">
+    <div class="sticky-header__content"></div>
+  </div>
+
+  {% block banner %}
+  <section class="page-header">
+    <div class="container">
+      <div class="page-header__inner">
+        <h3>{{ title }}</h3>
+        <div class="thm-breadcrumb__inner">
+          <ul class="thm-breadcrumb list-unstyled">
+            <li><a href="/">Home</a></li>
+            <li aria-hidden="true">›</li>
+            <li>{{ crumb }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endblock %}
+
+  {% block content %}{% endblock %}
+
+  <footer class="site-footer site-footer--two">
+    <div class="container">
+      <div class="site-footer__top">
+        <div class="row">
+          <div class="col-xl-4 col-lg-6 col-md-6">
+            <div class="footer-widget__column footer-widget__about">
+              <div class="footer-widget__logo">
+                <a class="brand brand--light" href="/">
+                  <span class="brand__mark">{{ ico("shield") }}</span>
+                  <span class="brand__name">Safety <b>Supervisor</b></span>
+                </a>
+              </div>
+              <p class="footer-widget__about-text">
+                An agentic AI system that judges PPE violations in context — not just
+                detects them. Findings are cited to the governing regulation, and
+                nothing is sent without a supervisor's signature.
+              </p>
+            </div>
+          </div>
+          <div class="col-xl-2 col-lg-6 col-md-6">
+            <div class="footer-widget__column footer-widget__usefull-link">
+              <div class="footer-widget__title-box"><h3 class="footer-widget__title">Console</h3></div>
+              <div class="footer-widget__link-box">
+                <ul class="footer-widget__link list-unstyled">
+                  <li><a href="/">Overview</a></li>
+                  <li><a href="/identify">Identify</a></li>
+                  <li><a href="/approvals">Approvals</a></li>
+                  <li><a href="/findings">Findings</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-lg-6 col-md-6">
+            <div class="footer-widget__column footer-widget__services">
+              <div class="footer-widget__title-box"><h3 class="footer-widget__title">Learn</h3></div>
+              <ul class="footer-widget__link list-unstyled">
+                <li><a href="/weekly">Weekly report</a></li>
+                <li><a href="/monitoring">Monitoring</a></li>
+                <li><a href="/about">How it works</a></li>
+                <li><a href="/faq">FAQ</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-xl-3 col-lg-6 col-md-6">
+            <div class="footer-widget__column footer-widget__contact">
+              <div class="footer-widget__title-box"><h3 class="footer-widget__title">This service</h3></div>
+              <ul class="footer-widget__contact-list list-unstyled">
+                <li>
+                  <h3>Database</h3>
+                  <div class="content"><p>{{ db_name }}</p></div>
+                </li>
+                <li>
+                  <h3>Scope</h3>
+                  <div class="content"><p>29 CFR 1926<br>Construction PPE</p></div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <div class="container">
+        <div class="site-footer__bottom-inner">
+          <p class="site-footer__bottom-text">SDA Agentic AI Bootcamp capstone · Saudi Digital Academy 2026</p>
+          <ul class="list-unstyled site-footer__bottom-menu">
+            <li><a href="/docs">API</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/about">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div class="mobile-nav__wrapper">
+  <div class="mobile-nav__overlay mobile-nav__toggler"></div>
+  <div class="mobile-nav__content">
+    <span class="mobile-nav__close mobile-nav__toggler" aria-label="Close menu">{{ ico("close") }}</span>
+    <div class="logo-box">
+      <a class="brand brand--light" href="/">
+        <span class="brand__mark">{{ ico("shield") }}</span>
+        <span class="brand__name">Safety <b>Supervisor</b></span>
+      </a>
+    </div>
+    <div class="mobile-nav__container"></div>
+    <ul class="mobile-nav__contact list-unstyled">
+      <li>{{ ico("pulse") }} <span>Service up · {{ stats.events }} findings</span></li>
+      <li>{{ ico("database") }} <span>{{ db_name }}</span></li>
+    </ul>
+  </div>
+</div>
+
+<a href="#" class="scroll-to-target scroll-to-top" aria-label="Back to top">
+  <span class="scroll-to-top__wrapper"><span class="scroll-to-top__inner"></span></span>
+  <span class="scroll-to-top__text"> Go Back Top</span>
+</a>
+
+<script src="/static/js/theme.js"></script>
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

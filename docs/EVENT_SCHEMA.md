@@ -1,6 +1,6 @@
 # ViolationEvent — the contract
 
-`SCHEMA_VERSION = "1.0"` · defined in [`events.py`](../events.py)
+`SCHEMA_VERSION = "1.0"` · defined in [`perception/events.py`](../perception/events.py)
 
 This is the interface between perception (lane A) and everything downstream. Lane A produces
 these; lanes C and D consume them. **Nothing downstream ever sees a bounding box tensor, a
@@ -137,7 +137,8 @@ useful insight.
 
 ## Zones
 
-Defined in [`zones.json`](../zones.json), resolved by [`zones.py`](../zones.py).
+Defined in [`config/zones.json`](../config/zones.json), resolved by
+[`perception/zones.py`](../perception/zones.py).
 
 A person is located by their **foot point** — the bottom-centre of their box — not the box
 centre. A worker leaning over a machine has a box overlapping three zones; their feet are in
@@ -147,8 +148,8 @@ area takes precedence.
 Validate and visualise before trusting any event:
 
 ```bash
-python zones.py zones.json
-python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
+python -m perception.zones config/zones.json
+python -m perception.zones config/zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 ```
 
 A polygon that looks right in JSON is routinely ten metres off on the actual floor. Have

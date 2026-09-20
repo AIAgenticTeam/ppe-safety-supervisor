@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Roster", "The people findings can be attributed to") }}
+    <p class="lead-note">
+      Identity is picked from this list, never typed. A finding can only be attached to someone
+      who is on it, which is what stops one person's history splitting across two spellings.
+    </p>
+
+    <div class="row gutter-y-30">
+      <div class="col-lg-8">
+        {% if not roster %}
+          <div class="note-box note-box--warn"><p>The roster is empty, so nobody can be identified yet. Add the first person on the right.</p></div>
+        {% else %}
+        <div class="row gutter-y-30">
+          {% for w in roster %}
+          <div class="col-md-6">
+            <div class="person">
+              <div class="person__avatar">{{ (w.name or w.worker_id)[:1]|upper }}</div>
+              <div>
+                <h3 class="person__name">{{ w.name }}</h3>
+                <p class="person__id"><code>{{ w.worker_id }}</code>{% if w.role %} · {{ w.role }}{% endif %}</p>
+                {% if w.email %}<p class="person__mail">{{ w.email }}</p>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="col-lg-4">
+        <form class="panel" data-roster-form novalidate>
+          <div class="panel__head"><h3>Add someone</h3></div>
+          <div class="panel__body">
+            <label class="field"><span class="label">worker id</span>
+              <input class="form-control" name="worker_id" placeholder="W-0412" required></label>
+            <label class="field"><span class="label">name</span>
+              <input class="form-control" name="name" required></label>
+            <label class="field"><span class="label">email <small>(optional)</small></span>
+              <input class="form-control" name="email" type="email"></label>
+            <label class="field"><span class="label">role <small>(optional)</small></span>
+              <input class="form-control" name="role"></label>
+            <button type="submit" class="thm-btn">{{ ico("plus", "ico--btn") }}<span>Add to roster</span></button>
+            <p class="msg" role="status"></p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, chip, severity_chip, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Audit view", "Everything recorded") }}
+
+    <div class="panel" data-replay>
+      <div class="panel__head">
+        <h3>Replay footage</h3>
+        <p>Posts events Lane A already produced, through the real intake and the real agents.</p>
+      </div>
+      <div class="panel__body">
+        <label class="field">
+          <span class="label">source</span>
+          <select name="source" class="form-select">
+            {% for s in sources %}<option value="{{ s.key }}">{{ s.label }} — {{ s.count }} file{{ "" if s.count == 1 else "s" }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="judge" checked>
+          <span>Judge with the agents <small>(unticked just records the findings and spends nothing)</small></span>
+        </label>
+        <button type="button" class="thm-btn" data-go>{{ ico("play", "ico--btn") }}<span class="lbl">Replay and judge</span></button>
+        <div class="progress" aria-hidden="true"><div class="progress__bar"></div></div>
+        <p class="msg" role="status"></p>
+      </div>
+    </div>
+
+    {% if not rows %}
+      <div class="note-box"><p>No findings yet. Replay some above.</p></div>
+    {% else %}
+    <div class="table-wrap">
+      <table class="data-table data-table--links">
+        <thead><tr><th>when</th><th>camera</th><th>zone</th><th>missing</th><th>confirmed</th>
+          <th>action</th><th>severity</th><th>worker</th><th>approved by</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr onclick="location.href='/findings/{{ r.event_id }}'">
+            <td>{{ r.captured_at|stamp }}</td><td>{{ r.camera_id }}</td><td>{{ r.zone }}</td>
+            <td>{{ r.missing|join(", ") or "—" }}</td>
+            <td>{{ "yes" if r.actionable else "no" }}</td>
+            <td>{% if r.action %}{{ severity_chip(r.action) }}{% else %}—{% endif %}</td>
+            <td>{{ r.severity|severity }}</td>
+            <td>{{ r.worker_id or "unattributed" }}</td>
+            <td>{{ r.approved_by or "—" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, chip, evidence, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Queue", "Findings waiting to be identified") }}
+    <p class="lead-note">
+      The vision system never says who someone is. Until a supervisor does, a finding counts
+      toward nobody's history — which is why this queue gates every repeat-offender escalation.
+    </p>
+
+    {% if not queue %}
+      <div class="note-box note-box--ok"><p>Nothing waiting. Every recorded finding has a name against it.</p></div>
+    {% else %}
+      {% if not roster %}
+        <div class="note-box note-box--warn">
+          <p>The roster is empty, so nobody can be identified yet. <a href="/team">Add people on the Team page</a>.</p>
+        </div>
+      {% endif %}
+
+      {% for row in queue %}
+      <article class="q-card {{ 'q-card--urgent' if row.actionable }}" data-identify="{{ row.event_id }}" data-needs-name>
+        <header class="q-card__head">
+          <h3>{{ row.zone }}</h3>
+          {% if row.actionable %}{{ chip("confirmed", "#C8102E") }}{% else %}{{ chip("not confirmed") }}{% endif %}
+          <span class="q-card__meta">{{ row.camera_id }} · {{ row.captured_at|stamp }}</span>
+        </header>
+        <p class="q-card__sub">missing {{ row.missing|join(", ") or "nothing" }}
+          · <a href="/findings/{{ row.event_id }}">details</a></p>
+
+        <div class="row gutter-y-30">
+          <div class="col-lg-5">{{ evidence(row.event_id) }}</div>
+          <div class="col-lg-7">
+            {% if not row.actionable %}
+              <p class="note">Not temporally confirmed, so this can never become an accusation — only a record.</p>
+            {% endif %}
+            {% if roster %}
+              <div class="label">identify</div>
+              {# A dropdown, never a text box. Typed identity is how one person's history
+                 splits across two spellings. #}
+              <select class="form-select" aria-label="Who was this?">
+                {% for w in roster %}<option value="{{ w.worker_id }}">{{ w.name }} · {{ w.worker_id }}</option>{% endfor %}
+              </select>
+              <input type="text" class="form-control mt-2" aria-label="Your name" placeholder="your name, e.g. supervisor:khalid">
+              <button type="button" class="thm-btn mt-3" data-submit disabled>Confirm identity</button>
+              <p class="msg" role="status"></p>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

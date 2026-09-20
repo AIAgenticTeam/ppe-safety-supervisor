@@ -201,7 +201,7 @@ def track_video(video_path, weights, zone_map, camera_id: str, policy,
     import cv2
     from ultralytics import YOLO
 
-    from ppe_compliance import assess_detections
+    from perception.ppe_compliance import assess_detections
 
     model = YOLO(str(weights))
     cap = cv2.VideoCapture(str(video_path))

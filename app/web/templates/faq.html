@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, section_title %}
+
+{% block content %}
+{% set qa = [
+  ("Why isn't one frame enough to flag someone?",
+   "At helmet recall 0.796, about one worn helmet in five goes undetected. A missing box can mean “not worn” or “not seen”. So a finding only becomes actionable once the item is missing in at least N of the last M frames the person was observed (8 of 10 by default)."),
+  ("Why does the system never say who someone is?",
+   "Tracker IDs do not survive a session, a camera hand-off or a worker leaving the frame. Putting a name on a finding is a supervisor's call, made on the Identify page, and it is picked from the roster rather than typed so one person's history cannot split across spellings."),
+  ("Why is “no gloves” ignored in the walkway but a ticket at the grinder?",
+   "Requirements belong to the zone, not the detection. Each zone lists the PPE it requires and the worker is located by their foot point. The same detection therefore means different things in different places."),
+  ("What does “could not assess” mean?",
+   "Absence of a detection is not proof of absence of PPE. If the geometry cannot tell — a head out of frame, say — the item is marked indeterminate rather than guessed, and it does not count toward a violation."),
+  ("Who actually sends an escalation?",
+   "Nobody but a person. Escalations and stop-work orders land on the Approvals page with the evidence, the citation and the drafted notice on screen before the button. Approving twice is refused rather than silently replacing whoever signed first."),
+  ("Which regulation is this judged against?",
+   "29 CFR 1926, construction. There is no dedicated hi-vis or hand-protection clause there, so vest and glove findings cite site policy supported by 1926.95's hazard-assessment duty, and say so."),
+  ("Why is there no weekly analyst agent?",
+   "The aggregation it would perform is SQL that already exists. Wrapping a language model around a query it cannot improve would only add a place for numbers to be restated wrongly. The Weekly report is deterministic, and says so."),
+  ("The Monitoring page says it cannot run. Is that good news?",
+   "No. It is a refusal, not a pass. Too few findings cannot tell you the detector is healthy — only that nobody has looked."),
+] %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Questions", "Why it behaves the way it does", "center") }}
+    <div class="faq-list">
+      {% for q, a in qa %}
+      <details class="faq-item" {{ "open" if loop.first }}>
+        <summary>{{ q }}</summary>
+        <p>{{ a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

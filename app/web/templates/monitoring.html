@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container" data-drift="{{ days }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-2">
+      {{ section_title("Detector health", "Is the detector still seeing what it used to?") }}
+      <nav class="seg" aria-label="Current window">
+        {% for d in (1, 7, 14, 30) %}<a href="/monitoring?days={{ d }}" class="{{ 'is-on' if d == days }}">{{ d }}d</a>{% endfor %}
+      </nav>
+    </div>
+    <p class="lead-note">
+      Compares recent findings against an earlier window. The failure this watches for is quiet:
+      recall does not announce itself when it drops — findings simply stop appearing, and an empty
+      queue looks exactly like a safe site.
+    </p>
+    <button type="button" class="thm-btn thm-btn--ghost mb-4" data-recheck>Recheck now</button>
+    <div id="drift-out" aria-live="polite">checking for drift…</div>
+  </div>
+</section>
+{% endblock %}

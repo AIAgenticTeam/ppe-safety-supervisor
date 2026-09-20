@@ -28,6 +28,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
+# Under data/ (gitignored) so a run never leaves a database in the repo root.
+DEFAULT_DB_PATH = "data/safety.db"
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS workers (
     worker_id   TEXT PRIMARY KEY,
@@ -103,8 +106,9 @@ class Worker:
 class EventStore:
     """Every method is a plain query. Nothing here is a judgement call."""
 
-    def __init__(self, path: str | Path = "safety.db") -> None:
+    def __init__(self, path: str | Path = DEFAULT_DB_PATH) -> None:
         self.path = str(path)
+        Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with closing(self._connect()) as conn:
             conn.executescript(SCHEMA)
             conn.commit()

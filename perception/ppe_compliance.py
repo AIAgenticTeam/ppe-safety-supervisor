@@ -12,7 +12,7 @@ therefore carries an explicit status of compliant / violation / review, and
 anything the geometry cannot assess is marked indeterminate rather than guessed.
 
 Usage:
-    from ppe_compliance import Policy, assess_image
+    from perception.ppe_compliance import Policy, assess_image
     report = assess_image("frame.jpg", "weights/best.pt", Policy())
     print(report.to_json())
 """
@@ -22,15 +22,19 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+ROOT = Path(__file__).absolute().parents[1]
+sys.path.insert(0, str(ROOT))
 
 # ultralytics/torch are imported lazily inside assess_image() on purpose: the
 # association and policy logic below is pure geometry, and lanes C and D need to
 # import it without installing a 2 GB deep-learning stack.
 
 if TYPE_CHECKING:
-    from zones import Zone, ZoneMap
+    from perception.zones import Zone, ZoneMap
 
 PERSON_CLASS = "Person"
 
@@ -288,7 +292,7 @@ if __name__ == "__main__":
                     "otherwise --required applies to everyone in frame.")
     ap.add_argument("image")
     ap.add_argument("--weights", default="weights/best.pt")
-    ap.add_argument("--zones", help="zones.json -- enables per-zone requirements")
+    ap.add_argument("--zones", help="config/zones.json -- enables per-zone requirements")
     ap.add_argument("--camera", help="camera id within the zone config, e.g. cam_3")
     ap.add_argument("--required", default="helmet,vest",
                     help="fallback requirement when no zone config is given")
@@ -297,7 +301,7 @@ if __name__ == "__main__":
 
     zmap = None
     if args.zones:
-        from zones import ZoneMap
+        from perception.zones import ZoneMap
         if not args.camera:
             ap.error("--zones requires --camera")
         zmap = ZoneMap.load(args.zones)
@@ -307,7 +311,7 @@ if __name__ == "__main__":
                        zone_map=zmap, camera_id=args.camera)
 
     print(rep.to_json())
-    from evidence import EvidenceStore
+    from perception.evidence import EvidenceStore
     store = EvidenceStore(args.evidence_dir)
     for p in rep.violations + rep.needs_review:
         where = p.zone.label if p.zone else "no zone config"

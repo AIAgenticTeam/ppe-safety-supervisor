@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 cv2 = pytest.importorskip("cv2", reason="needs opencv; install into .venv")
 import numpy as np  # noqa: E402
 
-from evidence import EvidenceStore  # noqa: E402
+from perception.evidence import EvidenceStore  # noqa: E402
 
 
 @pytest.fixture
@@ -156,7 +156,7 @@ def test_evidence_filenames_are_derived_from_the_event_id(store, frame):
 
 def test_the_second_evidence_format_is_gone():
     """ppe_compliance.save_evidence was the other way evidence got written."""
-    import ppe_compliance
+    from perception import ppe_compliance
     assert not hasattr(ppe_compliance, "save_evidence")
 
 
@@ -166,7 +166,7 @@ def test_build_event_honours_an_id_the_caller_already_wrote_files_under():
     sys.path.insert(0, str(ROOT))
     from datetime import datetime
 
-    from events import RIYADH, build_event
+    from perception.events import RIYADH, build_event
 
     class FakeZone:
         name, label, required_ppe, severity_multiplier = "z", "Z", ["helmet"], 1.0

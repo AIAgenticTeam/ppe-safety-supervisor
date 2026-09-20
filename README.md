@@ -29,7 +29,7 @@ cannot do, and they are why this system needs agents rather than `if` statements
 ## Architecture
 
 ```
-01  OFFLINE SETUP        zones.json · clause map · OSHA → FAISS index
+01  OFFLINE SETUP        config/zones.json · clause map · OSHA → FAISS index
                               ↓
 02  PERCEPTION           frame → YOLO26 → assess + zone → confirm over
     (deterministic)      time → ViolationEvent          ← NO LLM HERE
@@ -38,7 +38,7 @@ cannot do, and they are why this system needs agents rather than `if` statements
     (LangGraph)          Adjudicator  what response is proportionate   ← LLM
                          Recorder     commit + read back               ← no LLM
                               ↓  guardrail: escalation needs a human
-04  STATE & INTERFACE    SQLite · local evidence store · FastAPI · Streamlit
+04  STATE & INTERFACE    SQLite · local evidence store · FastAPI · console pages
 ```
 
 The boundary between **02** and **03** is the important one. Everything above it is
@@ -68,24 +68,34 @@ cd ppe-safety-supervisor
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-python zones.py zones.json               # validate the zone config
-python make_fixtures.py --out fixtures   # regenerate 20 sample events
-python -m pytest tests -q                # 102 contract, integration and tracking tests
+python -m perception.zones config/zones.json    # validate the zone config
+python scripts/make_fixtures.py --out fixtures  # regenerate 20 sample events
+python -m pytest tests -q                       # 102 contract, integration and tracking tests
 ```
+
+Run the app — one process, one port, the console and the API together:
+
+```bash
+python scripts/run_app.py --seed "fixtures/events/*.json" --no-judge   # http://127.0.0.1:8000
+```
+
+Judging events with the agents needs `OPENAI_API_KEY` in `.env`; `--no-judge` records the
+findings and spends nothing.
 
 **You do not need a GPU or the trained model to work on the agent layer.** `fixtures/`
 contains 20 realistic events covering every branch — compliant, violation, review,
 indeterminate, and a repeat offender across a week. Build against those.
 
-The deterministic core (`zones.py`, `events.py`, `ppe_compliance.py`) imports without
-torch or ultralytics — those load lazily only when a model is actually run.
+The deterministic core (`perception/zones.py`, `perception/events.py`,
+`perception/ppe_compliance.py`) imports without torch or ultralytics — those load lazily
+only when a model is actually run.
 
 With weights and footage, the live path produces the same JSON shape:
 
 ```bash
-python pipeline.py clip.mp4   --camera cam_3 --out events/   # tracked, confirmed
-python pipeline.py frame.jpg  --camera cam_3                 # one still
-python pipeline.py footage/   --camera cam_3                 # a folder of stills
+python -m perception.pipeline clip.mp4   --camera cam_3 --out events/   # tracked, confirmed
+python -m perception.pipeline frame.jpg  --camera cam_3                 # one still
+python -m perception.pipeline footage/   --camera cam_3                 # a folder of stills
 ```
 
 Video runs ByteTrack with N-of-M temporal confirmation, so only sustained absences are
@@ -96,7 +106,7 @@ Draw the zones over a real frame and have someone who knows the floor check them
 before trusting any event:
 
 ```bash
-python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
+python -m perception.zones config/zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 ```
 
 ---
@@ -105,20 +115,20 @@ python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 
 | path | what it is | lane |
 | --- | --- | --- |
-| `pipeline.py` | **frame → detections → zone-aware assessment → event** | A |
-| `zones.py` | Camera zones, point-in-polygon, foot-point location | A |
-| `ppe_compliance.py` | Detections → per-person compliance assessment | A |
-| `events.py` | **The frozen `ViolationEvent` contract** + JSON Schema | A |
-| `tracking.py` | **ByteTrack + N-of-M temporal confirmation** | A |
-| `evidence.py` | Local evidence store — annotated frame + crop per finding | A |
-| `make_fixtures.py` | Generates sample events with no GPU required | A |
-| `zones.json` | Zone polygons and per-zone PPE requirements | A |
-| `zones.test.json` | **Test-only** config; never loaded by the pipeline | A |
-| `restratify.py` | Re-splits a YOLO dataset so every class is in every split | A |
+| `perception/pipeline.py` | **frame → detections → zone-aware assessment → event** | A |
+| `perception/zones.py` | Camera zones, point-in-polygon, foot-point location | A |
+| `perception/ppe_compliance.py` | Detections → per-person compliance assessment | A |
+| `perception/events.py` | **The frozen `ViolationEvent` contract** + JSON Schema | A |
+| `perception/tracking.py` | **ByteTrack + N-of-M temporal confirmation** | A |
+| `perception/evidence.py` | Local evidence store — annotated frame + crop per finding | A |
+| `config/zones.json` | Zone polygons and per-zone PPE requirements | A |
+| `config/zones.test.json` | **Test-only** config; never loaded by the pipeline | A |
+| `scripts/make_fixtures.py` | Generates sample events with no GPU required | A |
+| `scripts/restratify.py` | Re-splits a YOLO dataset so every class is in every split | A |
 | `notebooks/` | YOLO26 training and evaluation runbook | A |
 | `kb/` | OSHA ingest, chunking, FAISS index, clause map, Ragas | B |
 | `agents/` | LangGraph graph, tools, guardrails, memory, severity | C |
-| `app/` | FastAPI, Streamlit console, SQLite, telemetry | D |
+| `app/` | FastAPI service, supervisor console (`app/web/`), SQLite, telemetry | D |
 | `eval/` | Severity labels and the end-to-end evaluation run | shared |
 | `fixtures/` | 20 generated events + index | shared |
 | `weights/` | Model weights — fetched from a release, not in git | A |
@@ -126,8 +136,9 @@ python zones.py zones.json --overlay frame.jpg cam_3 zones_overlay.jpg
 | `docs/` | Event schema, workflow, licensing notes | shared |
 | `tests/` | Contract and geometry tests | shared |
 
-`kb/`, `agents/`, `app/` and `eval/` are empty placeholders — one per lane, so two
-people never edit the same file. Root modules stay flat because they import each other.
+No Python lives at the repo root. Each lane owns a package (`perception/`, `kb/`, `agents/`,
+`app/`), so two people never edit the same file. Run modules from the repo root, e.g.
+`python -m perception.zones`; standalone tools live in `scripts/`.
 
 ---
 
@@ -169,9 +180,9 @@ Four parallel lanes. See [docs/WORKFLOW.md](docs/WORKFLOW.md) for the branch and
 | **A · Perception** | zones, tracking, event emission, evidence store |
 | **B · Knowledge** | OSHA ingest, chunking, FAISS index, clause map, Ragas |
 | **C · Agents** | LangGraph graph, tools, guardrails, memory, severity policy |
-| **D · App & docs** | FastAPI, Streamlit console, logging, report, demo script |
+| **D · App & docs** | FastAPI, console pages, logging, report, demo script |
 
-**The event schema is frozen.** If you need a new field, bump `SCHEMA_VERSION` in `events.py`
+**The event schema is frozen.** If you need a new field, bump `SCHEMA_VERSION` in `perception/events.py`
 and tell everyone — do not add one quietly. Every other lane codes against it.
 
 ---

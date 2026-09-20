@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, chip, severity_chip, evidence, trace_table, section_title %}
+
+{% block content %}
+<section class="pg-section">
+  <div class="container">
+    {{ section_title("Queue", "Waiting for a human") }}
+    <p class="lead-note">
+      Nothing on this page has been sent. The system drafts; a supervisor decides.
+      Escalations and stop-work always land here.
+    </p>
+
+    {% if not queue %}
+      <div class="note-box note-box--ok"><p>Nothing awaiting approval.</p></div>
+    {% endif %}
+
+    {% for row in queue %}
+    {% set d = row.decision %}
+    <article class="q-card q-card--{{ 'urgent' if row.action in ('stop_work', 'escalation') else 'caution' }}"
+             data-approve="{{ row.event_id }}" data-needs-name>
+      <header class="q-card__head">
+        <h3>{{ row.zone }}</h3>
+        {{ severity_chip(row.action, row.severity) }}
+        <span class="q-card__meta">{{ row.captured_at|stamp }} · <a href="/findings/{{ row.event_id }}">details</a></span>
+        <button type="button" class="q-card__later" data-later>Later</button>
+      </header>
+
+      <div class="q-card__body row gutter-y-30">
+        <div class="col-lg-7">
+          {# The evidence, the citation and the draft are all on screen before the button.
+             Approving something you have not seen is exactly the habit this system
+             should not create. #}
+          {% if d.draft_body %}
+            <div class="label">drafted for you to send</div>
+            <div class="draft">{{ d.draft_body }}</div>
+          {% endif %}
+
+          {% if d.citations %}
+            <div class="label">cited</div>
+            <div class="chips">{% for c in d.citations %}{{ chip("29 CFR " ~ c) }}{% endfor %}</div>
+          {% endif %}
+
+          {% if d.rationale %}
+          <details class="fold"><summary>Why the agent proposed this</summary><p>{{ d.rationale }}</p></details>
+          {% endif %}
+          <details class="fold"><summary>What the agents did</summary>{{ trace_table(row.trace) }}</details>
+
+          <div class="label">sign off</div>
+          <input type="text" class="form-control" aria-label="Approving as" placeholder="your name, e.g. supervisor:khalid">
+          <div class="q-card__actions">
+            <button type="button" class="thm-btn" data-submit disabled>Approve and send</button>
+          </div>
+          <p class="msg" role="status"></p>
+        </div>
+        <div class="col-lg-5">{{ evidence(row.event_id) }}</div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

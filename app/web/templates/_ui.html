@@ -1,0 +1,63 @@
+{#- Small building blocks shared by the pages. Icons are inline SVG, not an icon font:
+    the template's own icon fonts are licensed separately and not ours to redistribute. -#}
+
+{% macro ico(name, cls="") -%}
+<svg class="ico {{ cls }}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{#- A neutral tag, or a coloured one when `colour` is given. Colour is only ever a severity
+    band's, which carries meaning (see BAND_COLOUR in routes.py) -- never decoration. -#}
+{% macro chip(text, colour=None) -%}
+{% if colour %}<span class="chip" style="background:{{ colour }}">{{ text }}</span>
+{%- else %}<span class="chip ghost">{{ text }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro severity_chip(action, severity=None) -%}
+{% if not action %}{{ chip("undecided") }}
+{%- else %}{{ chip((action|action_label) ~ ((" · " ~ (severity|severity)) if severity is not none else ""), band_colour(action)) }}{% endif %}
+{%- endmacro %}
+
+{#- The crop and the frame. A finding a supervisor cannot check for themselves is not
+    auditable, so these are not decoration. A missing file is common (fixtures ship
+    without images), so a failed load swaps to a plain note instead of a broken icon. -#}
+{% macro evidence(event_id, both=False) -%}
+<div class="evidence {{ 'evidence--pair' if both }}">
+  <figure class="evidence__fig" data-evidence>
+    <img src="/evidence/{{ event_id }}/crop" alt="Cropped image of the worker" loading="lazy">
+    <figcaption>the worker</figcaption>
+    <p class="evidence__missing">No evidence image stored for this finding.</p>
+  </figure>
+  {% if both %}
+  <figure class="evidence__fig" data-evidence>
+    <img src="/evidence/{{ event_id }}/frame" alt="The scene, annotated" loading="lazy">
+    <figcaption>the scene, annotated</figcaption>
+    <p class="evidence__missing">No scene image stored for this finding.</p>
+  </figure>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro trace_table(trace) -%}
+{% if not trace %}<p class="note">No trace recorded.</p>
+{% else %}
+<p class="note">Every tool each agent chose, in the order it chose them. Nobody scripted this sequence.</p>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>#</th><th>agent</th><th>tool</th><th>result</th></tr></thead>
+    <tbody>
+    {% for s in trace %}
+      <tr><td>{{ s.step_index }}</td><td>{{ s.agent }}</td><td><code>{{ s.tool }}</code></td>
+          <td>{{ (s.result or "")[:80] }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro section_title(tagline, title, align="left") -%}
+<div class="section-title text-{{ align }}">
+  <div class="section-title__tagline-box"><span class="section-title__tagline">{{ tagline }}</span></div>
+  <div class="section-title__title-box"><h2 class="section-title__title">{{ title }}</h2></div>
+</div>
+{%- endmacro %}

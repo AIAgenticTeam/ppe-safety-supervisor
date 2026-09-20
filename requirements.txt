@@ -25,8 +25,8 @@ python-dotenv>=1.0
 # ---- app + observability (lane D) ----
 fastapi>=0.115
 uvicorn[standard]>=0.30
-streamlit>=1.38
-# cloudinary -- dropped: evidence is stored locally (see evidence.py)
+jinja2>=3.1          # the console pages (app/web/)
+# cloudinary -- dropped: evidence is stored locally (see perception/evidence.py)
 evidently>=0.4
 
 # ---- dev ----

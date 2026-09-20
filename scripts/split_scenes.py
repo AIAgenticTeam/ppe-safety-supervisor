@@ -17,7 +17,7 @@ tracking session. This script finds the dwells and exports them.
     python scripts/split_scenes.py data/footage/clip_d_cctv_25fps.mp4
 
 Writes to data/footage/scenes/<clip>/:
-    scene_00_t000-013.mp4      the segment, ready for pipeline.py
+    scene_00_t000-013.mp4      the segment, ready for perception/pipeline.py
     scene_00_t000-013.jpg      a representative still, to draw zones on
     scenes.json                index with durations and suggested camera ids
 
@@ -262,7 +262,7 @@ def main() -> None:
     print(f"Longest view is #{longest.index} at {longest.duration_seconds}s "
           f"({longest.frames} frames).")
     print(f"\nNext: pick a segment, draw zones on its still, then\n"
-          f"  python pipeline.py {longest.video_path} --camera {longest.camera_id}")
+          f"  python -m perception.pipeline {longest.video_path} --camera {longest.camera_id}")
 
 
 if __name__ == "__main__":

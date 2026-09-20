@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_ui.html" import ico, chip, severity_chip, evidence, trace_table, section_title %}
+
+{% block content %}
+{% set z = event.zone or {} %}
+{% set ppe = event.ppe or {} %}
+{% set conf = event.confirmation or {} %}
+<section class="pg-section">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      {{ section_title(event.camera_id ~ " · " ~ (event.captured_at|stamp), z.label or z.name or "Finding") }}
+      <a href="/findings" class="thm-btn thm-btn--ghost">All findings</a>
+    </div>
+
+    <div class="row gutter-y-30">
+      <div class="col-lg-5">
+        {{ evidence(event.event_id, both=True) }}
+      </div>
+      <div class="col-lg-7">
+        <div class="panel">
+          <div class="panel__head"><h3>What was seen</h3></div>
+          <dl class="facts">
+            <dt>status</dt><dd>{{ chip(event.status) }} {% if conf.confirmed %}{{ chip("confirmed", "#C8102E") }}{% else %}{{ chip("not confirmed") }}{% endif %}</dd>
+            <dt>required here</dt><dd>{{ (z.required_ppe or [])|join(", ") or "—" }}</dd>
+            <dt>missing</dt><dd>{{ (ppe.missing or [])|join(", ") or "—" }}</dd>
+            <dt>could not assess</dt><dd>{{ (ppe.indeterminate or [])|join(", ") or "—" }}</dd>
+            <dt>confirmation</dt><dd>{{ conf.rule or "—" }}{% if conf.frames_observed is defined %} · missing in {{ conf.frames_missing }} of {{ conf.frames_observed }} frames{% endif %}</dd>
+            <dt>worker</dt><dd>{{ (event.subject or {}).worker_ref or "unattributed" }}</dd>
+          </dl>
+          {% if event.reasons %}
+          <details class="fold"><summary>Why it was classed this way</summary>
+            <ul class="plain">{% for r in event.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+          </details>
+          {% endif %}
+        </div>
+
+        <div class="panel">
+          <div class="panel__head"><h3>The decision</h3></div>
+          {% if not decision %}
+            <p class="note">No decision recorded — this finding has not been judged.</p>
+          {% else %}
+          <dl class="facts">
+            <dt>action</dt><dd>{{ severity_chip(decision.action, decision.severity) }}</dd>
+            <dt>band</dt><dd>{{ decision.band }}</dd>
+            <dt>approval</dt><dd>{% if not decision.requires_approval %}not required
+              {%- elif decision.approved_by %}approved by {{ decision.approved_by }}
+              {%- else %}<a href="/approvals">waiting for a signature</a>{% endif %}</dd>
+            <dt>cited</dt><dd>{% for c in decision.citations %}{{ chip("29 CFR " ~ c) }} {% else %}—{% endfor %}</dd>
+          </dl>
+          {% if decision.rationale %}<details class="fold"><summary>Why the agent proposed this</summary><p>{{ decision.rationale }}</p></details>{% endif %}
+          {% if decision.draft_body %}<div class="label">drafted notice</div><div class="draft">{{ decision.draft_body }}</div>{% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h3>What the agents did</h3></div>
+      {{ trace_table(trace) }}
+    </div>
+  </div>
+</section>
+{% endblock %}

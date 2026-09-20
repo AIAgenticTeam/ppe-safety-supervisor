@@ -1,5 +1,5 @@
 {
-  "_comment": "Zone polygons are in image coordinates for each camera's native frame size. Draw them over a real frame with `python zones.py zones.json --overlay frame.jpg cam_3 out.jpg` and have someone who knows the floor check them before trusting any event.",
+  "_comment": "Zone polygons are in image coordinates for each camera's native frame size. Draw them over a real frame with `python -m perception.zones config/zones.json --overlay frame.jpg cam_3 out.jpg` and have someone who knows the floor check them before trusting any event.",
   "cameras": {
     "cam_3": {
       "label": "EXAMPLE (not a real camera) - Bay 3 - fabrication",
