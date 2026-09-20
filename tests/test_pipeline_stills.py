@@ -211,7 +211,7 @@ def test_two_confirmations_from_one_track_in_one_second_are_distinct():
     """
     from datetime import datetime
 
-    from events import RIYADH, make_event_id
+    from perception.events import RIYADH, make_event_id
     when = datetime(2026, 9, 19, 0, 11, 21, tzinfo=RIYADH)
 
     first = make_event_id("pour_site", 8, when, source="f111")

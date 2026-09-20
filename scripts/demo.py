@@ -84,13 +84,13 @@ RUN SHEET
   ------------------
   python scripts/demo.py --reset
   python scripts/run_app.py --db demo.db
-      Console opens on http://127.0.0.1:8501 Leave it running.
-      Check the Events tab shows 4 findings and the sidebar says "service up".
+      The app opens on http://127.0.0.1:8000 Leave it running.
+      Check the Findings page lists 4 findings and the top bar says "Service up".
 
   1  What the detector actually did                              ~60s
      Show data/footage/clip_e_pour_night_stable18s.mp4 playing, then:
 
-     Console -> Events -> pick a pour_site finding -> the annotated frame.
+     Console -> Findings -> open a pour_site finding -> the annotated frame.
 
      "Concrete pour, night. The worker has a cap, no vest, flip-flops. The
       system tracked him for ten frames before it was willing to say anything."
@@ -124,13 +124,13 @@ RUN SHEET
       said who it was, and the system could then see two prior findings."
 
   5  A human signs, or nothing happens                          ~45s
-     Console -> Approve. Evidence, citation and draft are all on screen
+     Console -> Approvals. Evidence, citation and draft are all on screen
      BEFORE the button. Type a name, approve.
 
      "Nothing on that screen had been sent. The system drafts; a person sends."
 
   6  The week, and whether the detector still works             ~45s
-     Console -> Report   : findings by zone, repeat offenders
+     Console -> Weekly report: findings by zone, repeat offenders
      Console -> Monitoring: "not enough data" - a refusal, not a pass.
 
      "It will not give a drift verdict on four events. A confident number
@@ -144,9 +144,9 @@ RUN SHEET
 
   If something breaks
   -------------------
-  API not answering     the console says so and prints the command to restart it
+  App not answering     restart it: python scripts/run_app.py --db demo.db
   Model call times out  the case parks, the finding is kept - say so, it is the design
-  Anything else         Console -> Events still works offline from the database
+  Anything else         Console -> Findings still works offline from the database
 """
 
 
