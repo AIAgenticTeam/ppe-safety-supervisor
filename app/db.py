@@ -129,6 +129,54 @@ class EventStore:
                 (worker.worker_id, worker.name, worker.email, worker.role))
             conn.commit()
 
+    def add_workers(self, workers: list[Worker]) -> int:
+        """Write a whole roster in one transaction, so a failure part-way leaves the
+        roster as it was rather than half imported. Same upsert as `add_worker`."""
+        with closing(self._connect()) as conn:
+            conn.executemany(
+                "INSERT OR REPLACE INTO workers (worker_id, name, email, role, active) "
+                "VALUES (?, ?, ?, ?, 1)",
+                [(w.worker_id, w.name, w.email, w.role) for w in workers])
+            conn.commit()
+        return len(workers)
+
+    def finding_counts(self) -> dict[str, int]:
+        """How many findings are attributed to each worker. Tells the roster page which
+        removals will delete someone and which can only hide them."""
+        with closing(self._connect()) as conn:
+            rows = conn.execute(
+                "SELECT worker_id, COUNT(*) AS n FROM events "
+                "WHERE worker_id IS NOT NULL GROUP BY worker_id").fetchall()
+        return {r["worker_id"]: r["n"] for r in rows}
+
+    def remove_workers(self, worker_ids: list[str]) -> dict[str, str]:
+        """Take people off the roster. Returns {worker_id: "deleted" | "deactivated"} for
+        each one that was on it; ids that are not (or already removed) are left out.
+
+        Someone with findings attributed to them is deactivated, not deleted: their history
+        belongs to the record, and the reports read their name from this table. Deactivated
+        people vanish from the roster and the identify dropdown, cannot be newly attributed,
+        and come back if their id is imported again. Someone with no findings is deleted.
+
+        One transaction, so a failure part-way leaves the roster as it was."""
+        outcome: dict[str, str] = {}
+        with closing(self._connect()) as conn:
+            for wid in dict.fromkeys(worker_ids):        # de-duplicated, order kept
+                row = conn.execute("SELECT active FROM workers WHERE worker_id = ?",
+                                   (wid,)).fetchone()
+                if row is None or not row["active"]:
+                    continue
+                has_findings = conn.execute(
+                    "SELECT 1 FROM events WHERE worker_id = ? LIMIT 1", (wid,)).fetchone()
+                if has_findings:
+                    conn.execute("UPDATE workers SET active = 0 WHERE worker_id = ?", (wid,))
+                    outcome[wid] = "deactivated"
+                else:
+                    conn.execute("DELETE FROM workers WHERE worker_id = ?", (wid,))
+                    outcome[wid] = "deleted"
+            conn.commit()
+        return outcome
+
     def roster(self) -> list[Worker]:
         """What the console's dropdown is built from. Supervisors pick; they never type
         an email, because `ahmed.ali@` and `a.ali@` silently split one person in two."""
@@ -197,7 +245,7 @@ class EventStore:
         one person's history across spellings.
         """
         with closing(self._connect()) as conn:
-            known = conn.execute("SELECT 1 FROM workers WHERE worker_id = ?",
+            known = conn.execute("SELECT 1 FROM workers WHERE worker_id = ? AND active = 1",
                                  (worker_id,)).fetchone()
             if not known:
                 return False
@@ -374,6 +422,7 @@ class EventStore:
                 "       SUM(actionable) AS actionable, "
                 "       SUM(worker_id IS NULL) AS unattributed FROM events").fetchone()
             decisions = conn.execute("SELECT COUNT(*) AS n FROM decisions").fetchone()["n"]
-            workers = conn.execute("SELECT COUNT(*) AS n FROM workers").fetchone()["n"]
+            workers = conn.execute(
+                "SELECT COUNT(*) AS n FROM workers WHERE active = 1").fetchone()["n"]
         return {**{k: (v or 0) for k, v in dict(row).items()},
                 "decisions": decisions, "workers": workers}

@@ -155,8 +155,10 @@ def install(app: FastAPI) -> None:
 
     @router.get("/team")
     def team(request: Request):
+        db = store()
         return render(request, "team.html", active="team", title="Team",
-                      roster=[w.__dict__ for w in store().roster()])
+                      roster=[w.__dict__ for w in db.roster()],
+                      findings=db.finding_counts())
 
     @router.get("/about")
     def about(request: Request):

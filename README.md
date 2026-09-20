@@ -82,6 +82,14 @@ python scripts/run_app.py --seed "fixtures/events/*.json" --no-judge   # http://
 Judging events with the agents needs `OPENAI_API_KEY` in `.env`; `--no-judge` records the
 findings and spends nothing.
 
+The roster (who a finding can be attributed to) is loaded from a CSV on the **Team** page —
+drop a file, review the preview, confirm. Excel exports work as they are: `;` delimiters,
+UTF-8 or Arabic Windows encodings, and header names like `Employee ID` / `Full Name`.
+
+Remove someone with the trash button, or tick several and remove them together. A person with
+findings on record is hidden from the roster rather than deleted, so their history and name stay
+intact; importing their id again restores them.
+
 **You do not need a GPU or the trained model to work on the agent layer.** `fixtures/`
 contains 20 realistic events covering every branch — compliant, violation, review,
 indeterminate, and a repeat offender across a week. Build against those.
