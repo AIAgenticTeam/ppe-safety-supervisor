@@ -1,0 +1,701 @@
+{
+ "model": "gpt-4o-mini",
+ "run_at": "2026-09-23T23:39:20",
+ "n_cases": 30,
+ "labels": "eval\\agent_labels.csv",
+ "tokens": {
+  "in": 160521,
+  "out": 12420,
+  "calls": 163,
+  "usd": 0.0315
+ },
+ "seconds_per_case": 9.5,
+ "agents": {
+  "n": 30,
+  "macro_f1": 0.658,
+  "per_class_f1": {
+   "log_only": 0.8,
+   "warning": 0.526,
+   "escalation": 0.556,
+   "stop_work": 0.75
+  },
+  "accuracy": 0.6,
+  "within_one_step": 0.867,
+  "serious_cases": 17,
+  "critical_misses": 4,
+  "critical_miss_rate": 0.235,
+  "critical_missed_cases": [
+   "D01",
+   "E03",
+   "E04",
+   "F01"
+  ],
+  "over_escalation_rate": 0.233,
+  "no_decision": 2
+ },
+ "rubric": {
+  "n": 30,
+  "macro_f1": 0.726,
+  "per_class_f1": {
+   "log_only": 1.0,
+   "warning": 0.6,
+   "escalation": 0.556,
+   "stop_work": 0.75
+  },
+  "accuracy": 0.667,
+  "within_one_step": 0.933,
+  "serious_cases": 17,
+  "critical_misses": 4,
+  "critical_miss_rate": 0.235,
+  "critical_missed_cases": [
+   "D01",
+   "E03",
+   "E04",
+   "F01"
+  ],
+  "over_escalation_rate": 0.2,
+  "no_decision": 0
+ },
+ "cases": [
+  {
+   "case": "A01",
+   "zone": "cam_3/walkway",
+   "missing": [
+    "helmet"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The finding indicates a missing helmet in a required PPE zone, which is a serious violation of safety regulations. Given the confirmed nature of the violation and the high confidence in the detection, it is necessary to escalate this issue for formal review. The worker's history is unknown, but the severity of the violation warrants immediate attention regardless of prior offenses.",
+   "draft_body": "A helmet was missing in the walkway zone, which is required under 29 CFR 1926.100 for head protection. This is a serious violation that requires formal review.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.91,
+   "human": "warning"
+  },
+  {
+   "case": "A02",
+   "zone": "cam_3/walkway",
+   "missing": [
+    "helmet"
+   ],
+   "identified": true,
+   "priors": 0,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing helmet in a designated walkway zone, which is a serious violation of the head protection requirement under 29 CFR 1926.100. The severity score is 5, which falls into the escalation band. Given the high confidence in the detection and the confirmed nature of the violation, it is necessary to formally address this issue to ensure compliance with safety regulations and site policy.",
+   "draft_body": "A helmet was missing in the walkway zone, which is a violation of the head protection requirement under 29 CFR 1926.100. This finding has a severity score of 5, indicating the need for formal action.\n\nRecord: no confirmed prior violations in the last 7 days.",
+   "seconds": 9.52,
+   "human": "warning"
+  },
+  {
+   "case": "A03",
+   "zone": "cam_3/walkway",
+   "missing": [
+    "helmet"
+   ],
+   "identified": true,
+   "priors": 2,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 9.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a severe violation of PPE requirements, specifically the absence of a helmet in a designated walkway zone. The final severity score is 9, which falls into the 'stop_work' category. Additionally, the worker has 2 confirmed prior violations, which further justifies this action. The confidence in the detection is high, indicating that the violation is likely accurate and should be addressed immediately to ensure safety compliance.",
+   "draft_body": "A worker was found without a helmet in the walkway zone, which is a violation of the required PPE under 29 CFR 1926.100. Given the severity of this violation and the worker's prior history of confirmed violations, please halt all work in this area until the situation is resolved.\n\nRecord: 2 confirmed prior violations in the last 7 days.",
+   "seconds": 10.97,
+   "human": "escalation"
+  },
+  {
+   "case": "A04",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "vest"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "log_only",
+   "rubric": "log_only",
+   "outcome": "done",
+   "reason": "",
+   "severity": 2.0,
+   "requires_approval": false,
+   "blocked_on": "worker_identity",
+   "rationale": "The finding indicates a missing vest while a helmet was present, which is a violation of site policy and 29 CFR 1926.95. However, the worker's identity is not confirmed, and we cannot assume a clean record. Therefore, we will log this violation without further action at this time.",
+   "draft_body": "A violation was observed in the pedestrian walkway between barriers where a vest was missing while a helmet was present. This is against site policy and 29 CFR 1926.95. The incident will be logged for future reference.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 8.54,
+   "human": "log_only"
+  },
+  {
+   "case": "A05",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "vest"
+   ],
+   "identified": true,
+   "priors": 0,
+   "evidence": "strong",
+   "agent": "log_only",
+   "rubric": "log_only",
+   "outcome": "done",
+   "reason": "",
+   "severity": 2.0,
+   "requires_approval": false,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing vest in a required PPE situation, which is a violation of site policy. However, the severity score is within the log-only band, and there are no prior violations for this worker. Therefore, it is appropriate to log this incident without further action at this time.",
+   "draft_body": "A violation was observed in the pedestrian walkway between barriers where a vest was missing, although a helmet was present. This is a violation of site policy as per 29 CFR 1926.95. The incident will be logged for record-keeping.\n\nRecord: no confirmed prior violations in the last 7 days.",
+   "seconds": 7.9,
+   "human": "log_only"
+  },
+  {
+   "case": "A06",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "vest"
+   ],
+   "identified": true,
+   "priors": 1,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": false,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing vest, which is a violation of site policy. Given the confirmed prior violation, the severity has been elevated to a warning. The confidence in this finding is high, indicating that the violation is likely accurate and should be addressed.",
+   "draft_body": "A warning is being issued due to a confirmed violation of missing PPE (vest) in the pedestrian walkway. The worker has a prior violation on record, which necessitates a discussion to reinforce compliance with site policy.\n\nRecord: 1 confirmed prior violation in the last 7 days.",
+   "seconds": 7.19,
+   "human": "warning"
+  },
+  {
+   "case": "A07",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "vest"
+   ],
+   "identified": true,
+   "priors": 2,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 6.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing vest in a zone where it is required, which is a serious violation of site policy. The final severity score is 6, which falls into the escalation band due to the presence of 2 confirmed prior violations. Given the high confidence in the detection, it is necessary to formally address this issue with the worker to ensure compliance with safety regulations.",
+   "draft_body": "A worker was found in the pedestrian walkway between barriers without the required vest, although a helmet was present. This is a violation of site policy under 29 CFR 1926.95. The worker has 2 confirmed prior violations, which necessitates a formal response to address this ongoing issue.\n\nRecord: 2 confirmed prior violations in the last 7 days.",
+   "seconds": 6.8,
+   "human": "escalation"
+  },
+  {
+   "case": "A08",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "helmet"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "moderate",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The violation is serious due to the missing helmet, which is critical for safety. The lack of confirmed worker history does not diminish the need for a formal response to ensure compliance with safety regulations.",
+   "draft_body": "A confirmed violation has been noted where a helmet was missing in the pedestrian walkway, which is a requirement under 29 CFR 1926.100. Immediate action is necessary to address this safety concern.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.22,
+   "human": "warning"
+  },
+  {
+   "case": "A09",
+   "zone": "d_view02/walkway",
+   "missing": [
+    "vest"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "moderate",
+   "agent": "warning",
+   "rubric": "log_only",
+   "outcome": "done",
+   "reason": "",
+   "severity": 2.0,
+   "requires_approval": true,
+   "blocked_on": "human_approval",
+   "rationale": "While the score suggests a 'log_only' action, the high confidence in the violation and the critical nature of PPE compliance in this area warrant a warning to reinforce site safety policies.",
+   "draft_body": "A warning has been issued regarding a missing vest in the pedestrian walkway. Please remind the team of the importance of wearing all required PPE at all times.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.25,
+   "human": "log_only"
+  },
+  {
+   "case": "B01",
+   "zone": "d_view02/work_area",
+   "missing": [
+    "gloves"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 3.0,
+   "requires_approval": false,
+   "blocked_on": "worker_identity",
+   "rationale": "The finding indicates a missing PPE item (gloves) in a work area beyond the barrier line, which is a violation of site policy. Although the worker's history is unresolved, the severity score suggests a warning is appropriate. The confidence in the detection is high, indicating that this violation is likely accurate. Therefore, a warning is warranted to address the issue and reinforce compliance with PPE requirements.",
+   "draft_body": "A warning is issued for a violation regarding missing gloves in the work area beyond the barrier line. The required PPE includes gloves, which were not present. Please have a word with the worker to ensure compliance with site policy and the relevant safety regulations.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 11.23,
+   "human": "warning"
+  },
+  {
+   "case": "B02",
+   "zone": "d_view02/work_area",
+   "missing": [
+    "vest",
+    "gloves"
+   ],
+   "identified": true,
+   "priors": 0,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a serious violation of site policy, with both a vest and gloves missing in a work area beyond the barrier line. The severity score of 5 warrants formal escalation as per site disciplinary policy. The worker has no prior violations, but the nature of this violation is significant enough to require immediate attention.",
+   "draft_body": "A worker was found in the work area beyond the barrier line without the required vest and gloves, which are mandated by site policy under 29 CFR 1926.95. This is a serious violation, and formal escalation is necessary.\n\nRecord: no confirmed prior violations in the last 7 days.",
+   "seconds": 9.95,
+   "human": "warning"
+  },
+  {
+   "case": "B03",
+   "zone": "d_view02/work_area",
+   "missing": [
+    "helmet",
+    "vest",
+    "gloves"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 10.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The finding indicates a severe violation of PPE requirements, with a total score of 10 due to missing helmet, vest, and gloves. Given the high confidence in the detection and the serious nature of the violation, it is necessary to halt work in this area until compliance is ensured. The identity of the worker is not confirmed, so we cannot assume a clean record, but the severity of the violation warrants immediate action.",
+   "draft_body": "A serious PPE violation has been observed in the work area beyond the barrier line, with the worker missing a helmet, vest, and gloves. This is a violation of 29 CFR 1926.100 and site policy under 29 CFR 1926.95. Work must be halted in this area until compliance is achieved.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 8.98,
+   "human": "stop_work"
+  },
+  {
+   "case": "C01",
+   "zone": "cam_1/assembly_line",
+   "missing": [
+    "gloves"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 3.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The violation is confirmed with high confidence, and while the score suggests a warning, the lack of confirmed prior violations means we cannot assume a clean record. A warning is necessary to ensure compliance with site policy.",
+   "draft_body": "A violation of PPE requirements was observed in the assembly line zone, specifically the absence of gloves. Please remind the team of the importance of wearing all required personal protective equipment to maintain safety standards.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.3,
+   "human": "warning"
+  },
+  {
+   "case": "C02",
+   "zone": "cam_1/assembly_line",
+   "missing": [
+    "gloves"
+   ],
+   "identified": true,
+   "priors": 1,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing PPE item (gloves) in a zone where they are required, which is a violation of site policy. Given that there is one confirmed prior violation for this worker, the final severity score is 5, warranting escalation. The confidence in this finding is high, indicating that the violation is likely accurate and should be addressed formally.",
+   "draft_body": "A confirmed violation has been noted regarding missing gloves in the assembly line zone, where they are required by site policy. The worker has a prior confirmed violation, which elevates the severity of this incident. Please address this matter formally with the worker.\n\nRecord: 1 confirmed prior violation in the last 7 days.",
+   "seconds": 9.8,
+   "human": "escalation"
+  },
+  {
+   "case": "C03",
+   "zone": "cam_1/assembly_line",
+   "missing": [
+    "gloves"
+   ],
+   "identified": true,
+   "priors": 3,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 9.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a severe violation of PPE requirements, specifically the absence of gloves in a zone where they are mandatory. Given the confirmed prior violations (3), the final severity score is 9, which necessitates an immediate halt to work activities in this area. This action is in line with site policy to ensure worker safety and compliance with PPE regulations.",
+   "draft_body": "A stop work order has been issued due to a severe PPE violation in the assembly line zone. The worker was found without gloves, which are required by site policy and OSHA regulation 29 CFR 1926.95. This is compounded by 3 prior confirmed violations, leading to a final severity score of 9. Immediate action is required to address this safety concern.\n\nRecord: 3 confirmed prior violations in the last 7 days.",
+   "seconds": 9.14,
+   "human": "stop_work"
+  },
+  {
+   "case": "C04",
+   "zone": "cam_1/assembly_line",
+   "missing": [
+    "helmet",
+    "gloves"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "moderate",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 8.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The absence of both a helmet and gloves constitutes a serious safety violation, as per site policy and OSHA regulations. The severity score of 8 necessitates an immediate halt to the activity to prevent potential injuries.",
+   "draft_body": "Immediate action is required to stop work in the assembly line zone due to a confirmed violation of PPE requirements. Both a helmet and gloves were missing, which poses a significant safety risk. Please ensure that all workers are equipped with the necessary PPE before resuming activities.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.04,
+   "human": "escalation"
+  },
+  {
+   "case": "D01",
+   "zone": "cam_3/grinding_station",
+   "missing": [
+    "goggles"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": false,
+   "blocked_on": "worker_identity",
+   "rationale": "The finding indicates a missing PPE item (goggles) at the grinding station, which is a violation of safety regulations. Although the worker's history is unresolved, the severity score suggests a warning is appropriate. The confidence in the detection is high, warranting a supervisory discussion to reinforce PPE compliance.",
+   "draft_body": "A warning is issued for a missing PPE item (goggles) at the grinding station. This is a violation of 29 CFR 1926.102, which requires eye protection from flying particles. Please have a discussion with the worker to ensure compliance with PPE requirements.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 7.36,
+   "human": "stop_work"
+  },
+  {
+   "case": "D02",
+   "zone": "cam_3/grinding_station",
+   "missing": [
+    "gloves"
+   ],
+   "identified": true,
+   "priors": 0,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": false,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing PPE item (gloves) at the grinding station, which is a violation of site policy and supported by OSHA regulation 29 CFR 1926.95. Given that this is the worker's first confirmed violation, a warning is appropriate to ensure compliance without escalating unnecessarily.",
+   "draft_body": "A warning is issued for a missing PPE item (gloves) at the grinding station. Compliance with site policy and OSHA regulation 29 CFR 1926.95 is required. Please remind the worker of the importance of wearing all required PPE.\n\nRecord: no confirmed prior violations in the last 7 days.",
+   "seconds": 7.15,
+   "human": "warning"
+  },
+  {
+   "case": "D03",
+   "zone": "cam_3/grinding_station",
+   "missing": [
+    "gloves",
+    "goggles"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 8.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The absence of both gloves and goggles constitutes a serious safety violation, as per site policy and OSHA regulations. The severity score of 8 necessitates an immediate halt to the activity to prevent potential injuries.",
+   "draft_body": "Immediate action is required to stop work at the grinding station due to the confirmed absence of required PPE (gloves and goggles). This is a serious violation of site policy and OSHA regulations, and safety must be prioritized.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.51,
+   "human": "stop_work"
+  },
+  {
+   "case": "D04",
+   "zone": "cam_3/grinding_station",
+   "missing": [
+    "goggles"
+   ],
+   "identified": true,
+   "priors": 2,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 8.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a serious violation of PPE requirements, specifically the absence of goggles at a grinding station, which is critical for eye protection as mandated by 29 CFR 1926.102. Given the confirmed prior violations (2), the final severity score is 8, which necessitates an immediate halt to work activities in this area to ensure safety compliance. This action is in line with site policy to maintain a safe working environment.",
+   "draft_body": "A serious PPE violation has been confirmed at the grinding station, where goggles were missing. This is a critical safety requirement under 29 CFR 1926.102. Due to the presence of 2 prior violations, work in this area must be halted immediately to address the safety concern.\n\nRecord: 2 confirmed prior violations in the last 7 days.",
+   "seconds": 8.06,
+   "human": "stop_work"
+  },
+  {
+   "case": "D05",
+   "zone": "cam_3/grinding_station",
+   "missing": [
+    "helmet",
+    "gloves",
+    "goggles"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 13.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The severity score of 13 indicates a critical violation with all required PPE missing. The high confidence in the detection further supports the need for immediate action to ensure safety compliance.",
+   "draft_body": "Immediate action is required to halt work at the grinding station due to a serious violation of PPE requirements. All necessary protective equipment was missing, which poses a significant safety risk. Please ensure compliance before resuming activities.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.64,
+   "human": "stop_work"
+  },
+  {
+   "case": "E01",
+   "zone": "cam_3/welding_bay",
+   "missing": [
+    "vest"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "no_decision",
+   "rubric": "warning",
+   "outcome": "parked",
+   "reason": "no draft",
+   "severity": null,
+   "requires_approval": false,
+   "blocked_on": "no_citation",
+   "rationale": "",
+   "draft_body": "",
+   "seconds": 7.0,
+   "human": "warning"
+  },
+  {
+   "case": "E02",
+   "zone": "cam_3/welding_bay",
+   "missing": [
+    "vest"
+   ],
+   "identified": true,
+   "priors": 1,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 5.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing vest in a welding bay, which is a serious violation of site policy and OSHA regulations (29 CFR 1926.95). Given that there is one prior confirmed violation for this worker, the final severity score is 5, which necessitates formal escalation. The confidence in this finding is high, indicating that the violation is well-supported by the evidence.",
+   "draft_body": "A vest was missing in the welding bay, which is required by site policy. This is a serious violation, especially considering the confirmed prior violation for this worker. Please address this issue formally.\n\nRecord: 1 confirmed prior violation in the last 7 days.",
+   "seconds": 9.02,
+   "human": "escalation"
+  },
+  {
+   "case": "E03",
+   "zone": "cam_3/welding_bay",
+   "missing": [
+    "goggles"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": false,
+   "blocked_on": "worker_identity",
+   "rationale": "The violation is confirmed with high confidence, and while the severity score suggests a warning, the lack of confirmed worker history necessitates caution in assuming this is a first offense. A warning will serve to remind the worker of the importance of wearing all required PPE.",
+   "draft_body": "A violation has been noted regarding missing goggles in the welding bay. Please remind the team of the importance of wearing all required personal protective equipment, particularly eye and face protection, as outlined in 29 CFR 1926.102.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 9.05,
+   "human": "stop_work"
+  },
+  {
+   "case": "E04",
+   "zone": "cam_3/welding_bay",
+   "missing": [
+    "goggles"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "moderate",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The severity score suggests a warning, and while we cannot confirm prior violations, the absence of goggles in a welding environment is a serious safety concern. Therefore, a warning is appropriate to ensure compliance and reinforce the importance of PPE.",
+   "draft_body": "Please have a word with the worker regarding the missing goggles in the welding bay. It is crucial to adhere to PPE requirements for safety, especially in environments where eye protection is essential.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 10.76,
+   "human": "escalation"
+  },
+  {
+   "case": "E05",
+   "zone": "cam_3/welding_bay",
+   "missing": [
+    "gloves",
+    "goggles"
+   ],
+   "identified": true,
+   "priors": 1,
+   "evidence": "strong",
+   "agent": "stop_work",
+   "rubric": "stop_work",
+   "outcome": "done",
+   "reason": "",
+   "severity": 10.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a serious violation of PPE requirements, with both gloves and goggles missing in a welding bay, which is critical for safety. The final severity score of 10, which includes a penalty for a prior violation, necessitates immediate action to halt work until compliance is ensured. This is in line with site policy for serious PPE violations.",
+   "draft_body": "A stop work order is being issued due to a confirmed violation of PPE requirements in the welding bay. The worker was found without gloves and goggles, which are essential for safety in this environment. Immediate action is required to ensure compliance with safety regulations.\n\nRecord: 1 confirmed prior violation in the last 7 days.",
+   "seconds": 9.47,
+   "human": "stop_work"
+  },
+  {
+   "case": "F01",
+   "zone": "cam_3/loading_dock",
+   "missing": [
+    "vest"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "no_decision",
+   "rubric": "warning",
+   "outcome": "parked",
+   "reason": "no draft",
+   "severity": null,
+   "requires_approval": false,
+   "blocked_on": "no_citation",
+   "rationale": "",
+   "draft_body": "",
+   "seconds": 12.1,
+   "human": "escalation"
+  },
+  {
+   "case": "F02",
+   "zone": "cam_3/loading_dock",
+   "missing": [
+    "boots"
+   ],
+   "identified": true,
+   "priors": 0,
+   "evidence": "strong",
+   "agent": "warning",
+   "rubric": "warning",
+   "outcome": "done",
+   "reason": "",
+   "severity": 4.0,
+   "requires_approval": false,
+   "blocked_on": null,
+   "rationale": "The finding indicates a missing item of required PPE (boots) in a high-confidence detection. Although this is the first confirmed violation for the worker, the severity of the violation warrants a warning to ensure compliance with site policy and safety regulations.",
+   "draft_body": "A worker in the loading dock zone was found missing required boots, which is a violation of site policy and the employer's duty under 29 CFR 1926.95 and 1926.28. Please have a word with the worker to reinforce the importance of wearing all required PPE.\n\nRecord: no confirmed prior violations in the last 7 days.",
+   "seconds": 9.71,
+   "human": "warning"
+  },
+  {
+   "case": "F03",
+   "zone": "cam_3/loading_dock",
+   "missing": [
+    "vest",
+    "boots"
+   ],
+   "identified": false,
+   "priors": null,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 7.0,
+   "requires_approval": true,
+   "blocked_on": "worker_identity",
+   "rationale": "The severity score of 7 indicates a serious violation due to missing required PPE (vest and boots). Although the worker's identity was not confirmed, the high confidence in the detection necessitates formal action to address this issue. It is important to reinforce compliance with PPE requirements on site.",
+   "draft_body": "The worker was observed without a required vest and boots at the loading dock, violating site policy and relevant safety regulations (29 CFR 1926.201 and 29 CFR 1926.95). The severity score of 7 indicates a serious violation, and while the worker's identity was not confirmed, the high confidence in the detection necessitates formal action. Please address this issue with the worker to ensure compliance with PPE requirements.\n\nRecord: identity not confirmed. Prior violations are unknown, not zero.",
+   "seconds": 12.56,
+   "human": "escalation"
+  },
+  {
+   "case": "F04",
+   "zone": "cam_3/loading_dock",
+   "missing": [
+    "helmet"
+   ],
+   "identified": true,
+   "priors": 1,
+   "evidence": "strong",
+   "agent": "escalation",
+   "rubric": "escalation",
+   "outcome": "done",
+   "reason": "",
+   "severity": 7.0,
+   "requires_approval": true,
+   "blocked_on": null,
+   "rationale": "The finding indicates a serious violation of PPE requirements, specifically the absence of a helmet, which is critical for head protection as mandated by 29 CFR 1926.100. Given that there is one prior confirmed violation, the final severity score of 7 necessitates formal escalation. The confidence in this finding is high, indicating that the violation is reliably detected and should be addressed promptly to ensure compliance and safety on site.",
+   "draft_body": "A worker was observed at the loading dock without a helmet, which is a violation of PPE requirements under 29 CFR 1926.100. The worker was wearing a vest and boots, but the absence of the helmet poses a significant safety risk. This is the second confirmed violation for this worker, warranting formal escalation.\n\nRecord: 1 confirmed prior violation in the last 7 days.",
+   "seconds": 9.19,
+   "human": "escalation"
+  }
+ ],
+ "rescored_at": "2026-09-23T23:44:48"
+}
