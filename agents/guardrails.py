@@ -225,15 +225,62 @@ def gate_low_confidence_goes_to_a_human(state: CaseState, confidence) -> Verdict
     return OK
 
 
-# Phrases that assert a pattern rather than describe one incident. Matched on word
-# boundaries, so "prior" does not fire on "priority".
+# Phrases that assert a pattern rather than describe one incident.
+#
+# The first version listed a dozen words and was beaten by five of six ordinary
+# paraphrases -- "has done this before", "not the first time", "habitually ignores",
+# "persistent non-compliance", "was also caught last week". It also fired on things a
+# single-incident notice says all the time: "do not let this happen again", "please
+# continue to monitor". Each pattern below is written against both lists -- the ways a
+# model alleges a history, and the look-alikes that do not: "priority" is not "prior",
+# "before resuming work" is not "before", and "multiple violations" in one finding is
+# several missing items, not a record.
+#
+# It is still a word list. It narrows the gap; it does not close it, which is why the
+# notice now also carries a "Record:" line the model did not write (see graph.py).
+_OCCASION = (r"(offen[cs]es?|violations?|times?|occasions?|incidents?|instances?|"
+             r"breach(es)?|infractions?|warnings?)")
+_RECORD = (r"(violations?|offen[cs]es?|incidents?|warnings?|citations?|breach(es)?|"
+           r"infractions?|findings?)")
+_DEFY = (r"(ignor|disregard|refus|fail|neglect|violat|flout|remov|forget|skip|offend|"
+         r"work\w* without|operat\w* without)\w*")
+
 PATTERN_CLAIMS = (
-    r"\bprior violation", r"\bprevious violation", r"\brepeat(ed)?\b",
-    r"\bagain\b", r"\bpattern of\b", r"\bhistory of\b", r"\brecurring\b",
-    r"\bsecond (offence|offense|violation|time)\b",
-    r"\bthird (offence|offense|violation|time)\b",
-    r"\bmultiple (violations|occasions|incidents)\b",
-    r"\bcontinues? to\b", r"\bonce again\b",
+    # a record, stated outright -- unless it is being denied ("no prior violations")
+    rf"(?<!\bno )(?<!\bany )\b(prior|previous|earlier|past|last) {_RECORD}\b",
+    r"\b(was|were|been|has|have|had) previously\b",
+    r"\bpreviously (been )?(warned|cited|reminded|told|disciplined|caught|seen|found|"
+    r"observed|reported|flagged)\b",
+    r"\balready (been )?(warned|cited|reminded|told|disciplined|caught)\b",
+    r"\bha(s|ve|d) been (warned|cited|reminded|disciplined|caught)\b",
+    r"\balso (been )?(caught|cited|warned|disciplined|reported for)\b",
+    r"\b(history|pattern) of\b", r"\btrack record\b", r"\bhas a record\b",
+    r"\b(disciplinary|poor|bad) record\b", r"\bknown for\b",
+    # not the first time
+    r"\bnot (the|his|her|their|a) first\b", r"\bnot (an? )?isolated\b",
+    rf"\b(second|third|fourth|fifth|sixth|\d+(st|nd|rd|th)) {_OCCASION}\b",
+    r"\byet another\b",
+    r"\b(on|in) (several|multiple|numerous|many|a number of|repeated|other|previous) "
+    r"(occasions|times|shifts|days|visits|inspections)\b",
+    r"\b(several|numerous|many|multiple) (times|occasions|incidents)\b",
+    # a time before this one
+    r"\b(last|previous|prior|earlier) (week|month|shift|day|time|occasion|visit|"
+    r"inspection|audit)\b",
+    r"\bearlier (today|this (week|month|shift))\b", r"\bin the past\b",
+    r"\b(done|happened|occurred|seen|caught|found|observed|warned|cited|reminded|told|"
+    r"flagged|reported)\b[^.;:!?\n]{0,40}?\bbefore\s*(?=[.,;:!?)\n]|$)",
+    # habit
+    r"\b(habitual(ly)?|chronic(ally)?|recurr(ing|ent)|persistently|repeatedly)\b",
+    r"\bpersistent (non-?compliance|failures?|disregard|violations?|refusal|neglect)\b",
+    r"\bconsistently (fail|ignor|disregard|refus|neglect)\w*",
+    r"\brepeat(ed)? (offen\w*|violations?|failures?|non-?compliance|breach(es)?|"
+    r"infractions?|incidents?|behaviou?r|pattern|findings?)\b",
+    r"\bre-?offen\w*",
+    # again -- as an allegation, not as a request ("do not let this happen again")
+    r"\b(once|yet|time and( time)?) again\b", r"(^|[.!?;]\s*)again\b",
+    r"\b(was|were|is|are|been|being|caught|seen|found|observed|spotted|cited|warned)"
+    r"\b(\s+\w+){0,3}\s+again\b",
+    rf"\bcontinu(e|es|ed|ing) to {_DEFY}", rf"\bkeeps? (on )?{_DEFY}",
 )
 
 
@@ -261,9 +308,10 @@ def gate_no_unsupported_pattern_claim(state: CaseState) -> Verdict:
 
     text = f"{d.draft_body} {d.rationale}".lower()
     for phrase in PATTERN_CLAIMS:
-        if re.search(phrase, text):
+        found = re.search(phrase, text)
+        if found:
             return Verdict(False,
-                           f"the notice alleges a pattern ({phrase.strip(chr(92) + 'b')}) "
+                           f'the notice alleges a pattern ("{found.group(0).strip(" .;!?")}") '
                            f"but no prior violation is on record",
                            Blocker.WORKER_IDENTITY)
     return OK

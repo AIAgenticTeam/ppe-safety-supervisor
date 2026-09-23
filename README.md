@@ -70,7 +70,7 @@ pip install -r requirements.txt
 
 python -m perception.zones config/zones.json    # validate the zone config
 python scripts/make_fixtures.py --out fixtures  # regenerate 20 sample events
-python -m pytest tests -q                       # 102 contract, integration and tracking tests
+python -m pytest tests -q                       # offline: no key, no weights, no network
 ```
 
 Run the app — one process, one port, the console and the API together:

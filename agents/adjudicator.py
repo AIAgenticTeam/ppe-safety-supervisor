@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from agents.llm import ModelUnavailable, complete  # noqa: E402
+from agents.llm import MALFORMED, ModelUnavailable, complete, text, tool_arguments  # noqa: E402
 from agents.state import Action, Blocker, CaseState, Decision, SeverityScore  # noqa: E402
 from agents.tools import (assess_confidence, event_facts, final_severity,  # noqa: E402
                           get_worker_history)
@@ -65,13 +65,11 @@ When you have decided, call submit_decision exactly once."""
 TOOL_SCHEMAS = [
     {"type": "function", "function": {
         "name": "get_worker_history",
-        "description": ("Prior confirmed violations for this worker in the window. "
-                        "Returns resolved=false when identity was never bound -- that "
-                        "means unknown, not zero."),
-        "parameters": {"type": "object", "properties": {
-            "worker_ref": {"type": ["string", "null"]},
-            "window_days": {"type": "integer", "default": 7},
-        }}}},
+        "description": ("Prior confirmed violations for the worker in THIS finding, over "
+                        "the site's fixed window. Takes no arguments: it reads whose "
+                        "finding this is itself. Returns resolved=false when identity "
+                        "was never bound -- that means unknown, not zero."),
+        "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "final_severity",
         "description": ("Severity for this finding: the zone's item weights plus the "
@@ -100,11 +98,24 @@ TOOL_SCHEMAS = [
 ]
 
 
+def _history(facts, event, db):
+    """Whose history, over what window, and excluding what -- none of it the model's.
+
+    The model used to pass `worker_ref` and `window_days`. On a finding nobody had
+    identified, it could name someone else's id and the case escalated at severity 9 on
+    another person's record, with no identity block, because the lookup it asked for had
+    "resolved". It could also widen the window to drag in old findings, or shrink it to
+    hide them. Same principle as final_severity: the model decides whether to ask, never
+    what goes in.
+    """
+    return get_worker_history(facts.get("worker_ref"), db=db,
+                              exclude_event=event.get("event_id"))
+
+
 def _dispatch(name, args, facts, event, db, captured):
     try:
         if name == "get_worker_history":
-            h = get_worker_history(args.get("worker_ref") or facts.get("worker_ref"),
-                                   db=db, window_days=args.get("window_days", 7))
+            h = _history(facts, event, db)
             captured["history"] = h
             return json.dumps({"resolved": h.resolved,
                                "prior_violations": h.prior_violations,
@@ -120,7 +131,7 @@ def _dispatch(name, args, facts, event, db, captured):
             if hist is None:
                 # Scored before looking anyone up. Fetch it now rather than
                 # defaulting to zero, which would read as a clean record.
-                hist = get_worker_history(facts.get("worker_ref"), db=db)
+                hist = _history(facts, event, db)
                 captured["history"] = hist
             priors = hist.prior_violations if hist.resolved else 0
             s = final_severity(facts.get("zone_name") or "default",
@@ -193,10 +204,27 @@ def adjudicate(state: CaseState, db=None, client=None,
             continue
 
         for call in choice.tool_calls:
-            args = json.loads(call.function.arguments or "{}")
+            args = tool_arguments(call)
+            if args is None:
+                state.log("adjudicator", call.function.name, {}, "malformed arguments")
+                messages.append({"role": "tool", "tool_call_id": call.id,
+                                 "content": MALFORMED})
+                continue
 
             if call.function.name == "submit_decision":
-                action = Action(args.get("action", "log_only"))
+                try:
+                    action = Action(args.get("action", "log_only"))
+                except ValueError:
+                    # An action outside the enum used to raise ValueError and lose the
+                    # finding. It is a correctable mistake, so say what is allowed.
+                    allowed = ", ".join(a.value for a in Action)
+                    state.log("adjudicator", "submit_decision",
+                              {"action": args.get("action")}, "invalid action")
+                    messages.append({"role": "tool", "tool_call_id": call.id,
+                                     "content": f"ERROR: action must be one of: {allowed}. "
+                                                f"Got {args.get('action')!r}. Call "
+                                                f"submit_decision again."})
+                    continue
                 sev = captured.get("severity")
                 conf = captured.get("confidence")
                 hist = captured.get("history")
@@ -211,10 +239,12 @@ def adjudicate(state: CaseState, db=None, client=None,
                         rationale=sev.explain() if sev else "",
                     ),
                     prior_violations=hist.prior_violations if hist and hist.resolved else 0,
-                    draft_body=args.get("draft_body", "").strip(),
+                    draft_body=text(args.get("draft_body")),
                     recipient_role="supervisor",
                     requires_approval=action in (Action.ESCALATION, Action.STOP_WORK),
-                    rationale=args.get("rationale", "").strip(),
+                    rationale=text(args.get("rationale")),
+                    history_resolved=hist.resolved if hist is not None else None,
+                    history_window_days=hist.window_days if hist is not None else 7,
                 )
                 state.log("adjudicator", "submit_decision", {"action": action.value},
                           f"severity {decision.severity.total}")

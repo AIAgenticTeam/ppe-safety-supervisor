@@ -1,17 +1,21 @@
 # Model weights
 
 Weights are **not** stored in git — a 20 MB binary in history is carried by every
-clone forever, and retraining would add another copy each time. They live as a
-**GitHub Release asset** instead.
+clone forever, and retraining would add another copy each time.
 
 ## Get them
+
+**Today:** no release is published. The weights are shared with the team directly —
+put the file you were given at `weights/best.pt`. Everything that needs a model
+defaults to that path.
+
+**Once a release exists:**
 
 ```bash
 python scripts/get_weights.py
 ```
 
-Downloads `best.pt` into this folder. Everything that needs a model defaults to
-`weights/best.pt`.
+downloads `best.pt` into this folder, and says what to do instead if it cannot.
 
 ## Publish a new model
 

@@ -138,9 +138,11 @@ RUN SHEET
 
   Rehearsing more than once
   -------------------------
-  Step 4 BINDS the run1 event to W-0412. Run it twice and that event becomes a third
-  prior, severity goes 7 -> 9, and the action becomes stop_work. Not wrong, but not
-  what you just said would happen. Re-run `--reset` between rehearsals.
+  Step 4 BINDS the run1 event to W-0412. Judging it again no longer counts it as its
+  own prior -- the finding being judged is excluded from its history -- and once a
+  decision is approved it is final: a second run leaves it, and its signature, alone.
+  So a rehearsal no longer spoils the next one. Re-run `--reset` anyway, so the queues
+  start empty and the story starts from the top.
 
   If something breaks
   -------------------

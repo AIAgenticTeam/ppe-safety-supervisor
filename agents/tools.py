@@ -156,7 +156,8 @@ class HistoryResult:
 
 
 def get_worker_history(worker_ref: str | None, db=None, window_days: int = 7,
-                       now: datetime | None = None) -> HistoryResult:
+                       now: datetime | None = None,
+                       exclude_event: str | None = None) -> HistoryResult:
     """Prior confirmed violations for this worker inside the window.
 
     Returns `resolved=False` when identity is unknown, and callers MUST treat that as
@@ -177,7 +178,11 @@ def get_worker_history(worker_ref: str | None, db=None, window_days: int = 7,
             resolved=False, note="no event store connected")
 
     since = (now or datetime.now()) - timedelta(days=window_days)
-    rows = db.violations_for(worker_ref, since=since)
+    # The finding being judged is never its own prior. Without this, judging an
+    # incident a second time -- a replay, a re-run of the demo -- counted it against
+    # the worker it was already attributed to: priors 2 -> 3, severity 9 -> 11, from
+    # one event.
+    rows = db.violations_for(worker_ref, since=since, exclude_event=exclude_event)
     return HistoryResult(
         worker_ref=worker_ref, window_days=window_days,
         prior_violations=len(rows), priors=list(rows), resolved=True)

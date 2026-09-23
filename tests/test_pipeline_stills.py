@@ -219,3 +219,40 @@ def test_two_confirmations_from_one_track_in_one_second_are_distinct():
 
     assert first != second, "one track's two confirmations must not share an id"
     assert "f111" in first and "f123" in second, "the confirming frame is traceable"
+
+
+def test_process_video_keeps_both_confirmations_of_one_track(monkeypatch, tmp_path):
+    """The same collision, through the whole video path rather than the id helper.
+
+    The id helper can be right and the pipeline still wrong -- if it stopped passing the
+    confirming frame, both events would collapse again and the test above would not
+    notice. The tracker is stubbed to replay what the pour clip produced: track 8
+    confirming twice, twelve frames apart, both inside the same second.
+    """
+    from perception import tracking
+    from perception.ppe_compliance import Policy
+    from perception.zones import ZoneMap
+
+    frame = np.full((720, 1280, 3), 40, dtype=np.uint8)
+
+    def pour(*_args, **_kwargs):
+        for items, index in ((("boots", "vest"), 111), (("helmet",), 123)):
+            yield (tracking.Confirmation(track_id=8, items=items, frames_observed=10,
+                                         frames_missing=8, window_seconds=1.0,
+                                         rule="8_of_10", frame_index=index),
+                   FakeAssessment(items), index, frame)
+
+    monkeypatch.setattr(tracking, "track_video", pour)
+    events = pipeline.process_video(
+        tmp_path / "pour.mp4", tmp_path / "best.pt",
+        ZoneMap.load(ROOT / "config" / "zones.json"), "cam_3", Policy(),
+        tmp_path / "out", n=8, m=10, stride=1)
+
+    ids = [e.event_id for e in events]
+    assert len(set(ids)) == 2, f"one track's two confirmations collided: {ids}"
+    assert [e.ppe.missing for e in events] == [["boots", "vest"], ["helmet"]]
+
+    evidence = tmp_path / "out" / "evidence"
+    for event_id in ids:
+        assert (evidence / f"frame_{event_id}.jpg").exists(), "a frame was overwritten"
+        assert (evidence / f"crop_{event_id}.jpg").exists(), "a crop was overwritten"

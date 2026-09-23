@@ -98,8 +98,8 @@ def test_known_identity_without_a_store_is_also_unresolved():
 
 
 def test_history_reads_the_store_when_one_exists():
-    class FakeDB:
-        def violations_for(self, ref, since):
+    class FakeDB:                       # mirrors EventStore.violations_for exactly
+        def violations_for(self, ref, since=None, exclude_event=None):
             return [{"event_id": "a"}, {"event_id": "b"}]
 
     h = get_worker_history("W-0412", db=FakeDB())

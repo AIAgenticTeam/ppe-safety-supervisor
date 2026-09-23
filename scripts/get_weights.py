@@ -1,13 +1,16 @@
 """Download the trained detector from the GitHub release into weights/.
 
     python scripts/get_weights.py
+
+No release is published at the moment: the weights are shared with the team directly,
+and the file goes in weights/best.pt by hand. This script is for when a release exists.
 """
 
 import sys
 import urllib.request
 from pathlib import Path
 
-REPO = "Qtz10/ppe-safety-supervisor"
+REPO = "AIAgenticTeam/ppe-safety-supervisor"
 TAG = "v1-detector"
 ASSET = "best.pt"
 
@@ -24,7 +27,10 @@ def main() -> None:
     try:
         urllib.request.urlretrieve(URL, DEST)
     except Exception as e:
-        sys.exit(f"failed: {e}\n\nIs the release published? See weights/README.md")
+        DEST.unlink(missing_ok=True)            # never leave a half-written model behind
+        sys.exit(f"failed: {e}\n\n"
+                 f"No release {TAG!r} is published on {REPO}. The weights are shared "
+                 f"with the team directly: copy best.pt to {DEST}. See weights/README.md")
     print(f"saved {DEST} ({DEST.stat().st_size / 1e6:.1f} MB)")
 
 

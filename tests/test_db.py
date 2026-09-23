@@ -126,6 +126,32 @@ def test_approving_twice_does_not_overwrite_the_first_signature(db):
     assert db.get_decision("e1")["approved_by"] == "supervisor:first"
 
 
+def test_a_signed_decision_cannot_be_rewritten(db):
+    """record_decision used INSERT OR REPLACE, which deleted the row -- signature and
+    all -- and wrote a fresh unsigned one. A replay of an approved escalation came back
+    as an unapproved warning, and the approval was simply gone."""
+    db.record_event(event("e1"))
+    _decide(db, "e1")
+    assert db.approve("e1", "supervisor:khalid")
+
+    written = db.record_decision(event_id="e1", action="warning", severity=3.0,
+                                 band="warning", citations=["1926.100"],
+                                 requires_approval=False)
+    assert written is False
+    kept = db.get_decision("e1")
+    assert kept["approved_by"] == "supervisor:khalid"
+    assert kept["action"] == "escalation"
+
+
+def test_an_unsigned_decision_can_still_be_revised(db):
+    """Re-judging before anyone has signed is legitimate, and must still work."""
+    db.record_event(event("e1"))
+    _decide(db, "e1")
+    assert db.record_decision(event_id="e1", action="warning", severity=3.0,
+                              band="warning", citations=["1926.100"]) is True
+    assert db.get_decision("e1")["action"] == "warning"
+
+
 def test_approving_something_that_does_not_exist_is_false_not_an_error(db):
     assert not db.approve("no_such_event", "supervisor:khalid")
 

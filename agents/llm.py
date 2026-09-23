@@ -63,3 +63,29 @@ def complete(client, **kwargs):
                 break
             time.sleep(BASE_DELAY * (2 ** attempt))
     raise ModelUnavailable(f"{type(last).__name__}: {last}") from last
+
+
+MALFORMED = ("ERROR: your arguments were not a valid JSON object, so nothing was done. "
+             "Call the tool again with valid JSON arguments.")
+
+
+def tool_arguments(call) -> dict | None:
+    """The arguments of one tool call as a dict, or None if they are not one.
+
+    Models occasionally return truncated JSON, or valid JSON that is not an object. That
+    used to raise straight out of the agent loop -- the case crashed, the API answered
+    500, and the finding was never written. A malformed call is the model's mistake to
+    correct, so the caller answers it with MALFORMED and lets the model try again.
+    """
+    import json
+
+    try:
+        parsed = json.loads(call.function.arguments or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def text(value) -> str:
+    """A model-supplied field as clean text, whatever type it actually arrived as."""
+    return value.strip() if isinstance(value, str) else ""

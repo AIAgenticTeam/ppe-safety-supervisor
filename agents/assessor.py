@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from agents.llm import ModelUnavailable, complete  # noqa: E402
+from agents.llm import MALFORMED, ModelUnavailable, complete, text, tool_arguments  # noqa: E402
 from agents.state import Blocker, CaseState, Citation, Draft  # noqa: E402
 from agents.tools import (event_facts, lookup_clause, retrieve_clause_text,  # noqa: E402
                           score_baseline)
@@ -154,11 +154,17 @@ def assess(state: CaseState, client=None, model: str = "gpt-4o-mini") -> CaseSta
             continue
 
         for call in choice.tool_calls:
-            args = json.loads(call.function.arguments or "{}")
+            args = tool_arguments(call)
+            if args is None:
+                state.log("assessor", call.function.name, {}, "malformed arguments")
+                messages.append({"role": "tool", "tool_call_id": call.id,
+                                 "content": MALFORMED})
+                continue
 
             if call.function.name == "submit_draft":
                 citations = []
-                for clause_id in args.get("clause_ids", []):
+                clause_ids = args.get("clause_ids")
+                for clause_id in clause_ids if isinstance(clause_ids, list) else []:
                     # Re-derive from the map rather than trusting the model's echo. It
                     # cannot smuggle a clause in through the summary.
                     for item in facts.get("missing", []):
@@ -169,10 +175,10 @@ def assess(state: CaseState, client=None, model: str = "gpt-4o-mini") -> CaseSta
                                 is_site_policy=not rule.is_regulatory))
                             break
                 draft = Draft(
-                    summary=args.get("summary", "").strip(),
+                    summary=text(args.get("summary")),
                     citations=citations,
                     items_missing=list(facts.get("missing", [])),
-                    confidence_note=args.get("confidence_note", "").strip(),
+                    confidence_note=text(args.get("confidence_note")),
                 )
                 state.log("assessor", "submit_draft",
                           {"clause_ids": args.get("clause_ids")},

@@ -61,7 +61,7 @@ def record(state: CaseState, db, bound_by: str | None = None) -> CaseState:
 
     if state.decision is not None:
         d = state.decision
-        db.record_decision(
+        written = db.record_decision(
             event_id=event_id,
             action=d.action.value,
             severity=float(d.severity.total),
@@ -73,7 +73,8 @@ def record(state: CaseState, db, bound_by: str | None = None) -> CaseState:
             requires_approval=d.requires_approval,
         )
         state.log("recorder", "commit_record", {"event_id": event_id},
-                  f"decision {d.action.value}")
+                  f"decision {d.action.value}" if written else
+                  "not written: a signed decision is already on file and is final")
 
     # ---- read it back ---------------------------------------------------
     verified = db.verify(event_id)

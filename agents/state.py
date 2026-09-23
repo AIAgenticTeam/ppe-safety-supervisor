@@ -45,6 +45,7 @@ class Blocker(str, Enum):
     WRITE_UNCONFIRMED = "write_unconfirmed"
     MODEL_UNAVAILABLE = "model_unavailable"
     SCHEMA_UNSUPPORTED = "schema_unsupported"
+    AGENT_ERROR = "agent_error"
 
 
 ORDER = (Action.NO_ACTION, Action.LOG_ONLY, Action.WARNING,
@@ -118,6 +119,10 @@ class Decision:
     requires_approval: bool = False
     rationale: str = ""
     agent: str = "adjudicator"
+    # What the history lookup actually established, so the notice can state it from the
+    # record rather than from the model's prose. None = history was never looked up.
+    history_resolved: bool | None = None
+    history_window_days: int = 7
 
 
 @dataclass

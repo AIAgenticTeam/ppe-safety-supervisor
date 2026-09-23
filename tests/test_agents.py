@@ -719,3 +719,237 @@ def test_every_terminal_outcome_leaves_the_finding_on_file(tmp_path):
         out = run_case(mutate(confirmed_event()), db, client=StubClient([]))
         assert db.get_event("evt_test_1") is not None, (
             f"a {out['outcome']!r} outcome dropped the finding")
+
+
+# ------------------------------------------------ history: whose, and excluding what
+
+def _worker_with_priors(db, n=2, worker="W-1"):
+    db.add_worker(Worker(worker, "Someone"))
+    for i in range(n):
+        prior = confirmed_event(worker=worker)
+        prior["event_id"] = f"prior_{i}"
+        db.record_event(prior)
+        db.attach_identity(f"prior_{i}", worker, "supervisor:test")
+
+
+def test_judging_a_finding_again_does_not_count_it_as_its_own_prior(tmp_path):
+    """Once identified, a finding is in the worker's history -- and the history lookup
+    used to read it back when the same finding was judged again. Every replay added
+    one: priors 2 -> 3 -> 4, severity 9 -> 11, from the same incident."""
+    db = EventStore(tmp_path / "t.db")
+    _worker_with_priors(db, 2)
+    db.record_event(confirmed_event(worker="W-1"))
+    db.attach_identity("evt_test_1", "W-1", "supervisor:test")
+
+    for _ in range(3):
+        out = run_case(confirmed_event(worker="W-1"), db,
+                       client=StubClient(_full_script("escalation", worker="W-1")))
+        assert out["case"].decision.prior_violations == 2
+
+
+def test_the_model_cannot_choose_whose_history_is_read(tmp_path):
+    """Nobody has identified this finding, and the model asks for W-1's record anyway.
+    The lookup used to take its word, "resolve", and escalate an unidentified person on
+    someone else's two priors -- with no identity block, because it had resolved."""
+    db = EventStore(tmp_path / "t.db")
+    _worker_with_priors(db, 2)
+
+    out = run_case(confirmed_event(worker=None), db,
+                   client=StubClient(_full_script("warning", worker="W-1")))
+    assert out["case"].decision.prior_violations == 0
+    assert out["case"].decision.history_resolved is False
+    assert out["case"].blocked_on == Blocker.WORKER_IDENTITY
+
+
+def test_the_model_cannot_widen_the_history_window(tmp_path):
+    db = EventStore(tmp_path / "t.db")
+    db.add_worker(Worker("W-1", "Someone"))
+    old = confirmed_event(worker="W-1")
+    old["event_id"] = "prior_old"
+    old["captured_at"] = (datetime.now().astimezone()
+                          - timedelta(days=60)).isoformat(timespec="seconds")
+    db.record_event(old)
+    db.attach_identity("prior_old", "W-1", "supervisor:test")
+
+    state = CaseState(event=confirmed_event(worker="W-1"))
+    state.draft = Draft(summary="x", citations=[Citation("1926.100", "Head protection")])
+    state = adjudicate(state, db=db, client=StubClient([
+        [StubCall("get_worker_history", {"worker_ref": "W-1", "window_days": 3650})],
+        [StubCall("submit_decision", {"action": "warning", "rationale": "r",
+                                      "draft_body": "b"})]]))
+    assert state.decision.prior_violations == 0
+
+
+# ------------------------------------------------- a signed decision is final
+
+def test_an_approved_decision_is_not_judged_again(tmp_path):
+    """No model turns are scripted for the second run: reaching an agent would park it."""
+    db = EventStore(tmp_path / "t.db")
+    run_case(confirmed_event(), db, client=StubClient(_full_script("escalation")))
+    assert db.approve("evt_test_1", "supervisor:k")
+
+    out = run_case(confirmed_event(), db, client=StubClient([]))
+    assert out["outcome"] == "done"
+    assert "supervisor:k" in out["reason"]
+    assert out["case"].draft is None, "no agent ran"
+    assert db.get_decision("evt_test_1")["approved_by"] == "supervisor:k"
+
+
+# ------------------------------------------------- a model that answers badly
+
+class RawCall(StubCall):
+    """A tool call whose arguments are sent exactly as given, not JSON-encoded."""
+
+    def __init__(self, name, raw, call_id="c1"):
+        super().__init__(name, {}, call_id)
+        self.function.arguments = raw
+
+
+GOOD_DRAFT = [StubCall("submit_draft", {"summary": "A worker was without head "
+                                                   "protection.",
+                                        "clause_ids": ["1926.100"]})]
+GOOD_DECISION = [StubCall("submit_decision", {"action": "warning", "rationale": "r",
+                                              "draft_body": "note"})]
+
+
+@pytest.mark.parametrize("turns", [
+    [[RawCall("submit_draft", '{"summary": "A worker was with')], GOOD_DRAFT, GOOD_DECISION],
+    [[RawCall("submit_draft", "[1, 2, 3]")], GOOD_DRAFT, GOOD_DECISION],
+    [[StubCall("submit_draft", {"summary": 42, "clause_ids": ["1926.100"],
+                                "confidence_note": ["not", "text"]})], GOOD_DECISION],
+    [GOOD_DRAFT, [StubCall("submit_decision", {"action": "severe", "rationale": "r",
+                                               "draft_body": "b"})], GOOD_DECISION],
+    [GOOD_DRAFT, [RawCall("submit_decision", '{"action": "warn')], GOOD_DECISION],
+], ids=["truncated", "not-an-object", "wrong-types", "invalid-action",
+        "truncated-decision"])
+def test_a_malformed_answer_is_corrected_not_fatal(tmp_path, turns):
+    """Each of these used to raise out of the agent: the API answered 500 and the
+    finding was never written. A confused model lost data a dead model would not."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db, client=StubClient(turns))
+    assert out["outcome"] == "done"
+    assert db.get_event("evt_test_1") is not None
+
+
+def test_clauses_sent_as_a_string_are_not_split_into_characters(tmp_path):
+    """Iterating "1926.100" yields "1", "9", ... -- none a clause, so no citation, and
+    the citation gate parks the case. Refused, not crashed, and not guessed at."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db, client=StubClient([
+        [StubCall("submit_draft", {"summary": "s", "clause_ids": "1926.100"})]]))
+    assert out["outcome"] == "parked"
+    assert out["case"].draft.citations == []
+    assert db.get_event("evt_test_1") is not None
+
+
+def test_a_model_that_never_answers_properly_parks_the_case(tmp_path):
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db,
+                   client=StubClient([[RawCall("submit_draft", "{")]] * 10))
+    assert out["outcome"] == "parked"
+    assert db.get_event("evt_test_1") is not None
+
+
+def test_an_agent_failing_in_a_way_nobody_foresaw_still_keeps_the_finding(
+        tmp_path, monkeypatch):
+    import agents.graph as graph
+
+    def broken(*_a, **_k):
+        raise RuntimeError("something nobody anticipated")
+    monkeypatch.setattr(graph, "assess", broken)
+
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(), db, client=StubClient([]))
+    assert out["outcome"] == "parked"
+    assert out["case"].blocked_on == Blocker.AGENT_ERROR
+    assert db.get_event("evt_test_1") is not None
+
+
+# ------------------------------------------ pattern claims: the paraphrases
+
+@pytest.mark.parametrize("claim", [
+    "The worker has done this before.",
+    "This is not the first time he has been seen without a helmet.",
+    "The worker habitually ignores PPE rules.",
+    "Persistent non-compliance with eye protection requirements.",
+    "He was also caught last week without goggles.",
+    "This worker is a repeat offender.",
+    "He was previously warned about goggles.",
+    "The worker has already been cited this week.",
+    "Again, the worker removed his helmet.",
+    "On several occasions the worker has entered without a vest.",
+    "This has happened before.",
+    "Earlier this week the same worker was flagged.",
+    "Yet another missing helmet.",
+    "The worker is known for ignoring PPE.",
+    "His record shows two earlier incidents.",
+    "The worker keeps removing his goggles.",
+    "This is not an isolated incident.",
+    "He was seen without a helmet again.",
+    "The worker consistently fails to wear goggles.",
+    "This is the 3rd time this week.",
+])
+def test_pattern_claims_are_caught_when_paraphrased(claim):
+    """The first word list missed five of six ordinary rewordings of the same claim."""
+    assert not gate_no_unsupported_pattern_claim(_decision_saying(claim))
+
+
+@pytest.mark.parametrize("notice", [
+    # the live gpt-4o-mini rationale on file for the goggles case
+    "Although the severity score suggests a warning, the worker's identity is "
+    "unconfirmed, and we cannot assume a clean record. Therefore, a warning is "
+    "appropriate to address the violation while acknowledging the uncertainty in the "
+    "worker's history.",
+    "Please ensure the worker is told before resuming work.",
+    "Please ensure this does not happen again.",
+    "Please continue to monitor the area.",
+    "This finding includes multiple violations: helmet and vest.",
+    "Ensure PPE is worn consistently.",
+    "The worker has no prior violations on record.",
+    "The helmet was also flagged as missing.",
+    "This finding has been flagged for review.",
+    "Evidence is moderate; please verify the footage before acting.",
+    "Make sure this is not allowed to happen again.",
+])
+def test_single_incident_notices_are_not_mistaken_for_pattern_claims(notice):
+    """The old list fired on "happen again" and "continue to" -- phrases every notice
+    uses. A guard that cries wolf trains its readers to click through it."""
+    verdict = gate_no_unsupported_pattern_claim(_decision_saying(notice))
+    assert verdict, verdict.reason
+
+
+def test_the_refusal_quotes_the_words_that_tripped_it():
+    verdict = gate_no_unsupported_pattern_claim(
+        _decision_saying("The worker habitually ignores PPE rules."))
+    assert '"habitually"' in verdict.reason
+
+
+# ------------------------------------------ the record, in words the model did not write
+
+def test_the_notice_states_an_unknown_record_as_unknown(tmp_path):
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(worker=None), db, client=StubClient(_full_script()))
+    body = out["case"].decision.draft_body
+    assert body.startswith("note to supervisor")
+    assert body.endswith("Record: identity not confirmed. Prior violations are "
+                         "unknown, not zero.")
+    assert db.get_decision("evt_test_1")["draft_body"] == body, "the stored notice has it"
+
+
+def test_the_notice_states_a_known_record_from_the_lookup(tmp_path):
+    db = EventStore(tmp_path / "t.db")
+    _worker_with_priors(db, 2)
+    out = run_case(confirmed_event(worker="W-1"), db,
+                   client=StubClient(_full_script("escalation", worker="W-1")))
+    assert out["case"].decision.draft_body.endswith(
+        "Record: 2 confirmed prior violations in the last 7 days.")
+
+
+def test_the_record_line_is_added_after_the_gates_have_read_the_notice(tmp_path):
+    """The line says "prior violations". Had the pattern gate read it, every notice on
+    an unidentified worker would have demanded a signature for words the system wrote."""
+    db = EventStore(tmp_path / "t.db")
+    out = run_case(confirmed_event(worker=None), db, client=StubClient(_full_script()))
+    assert "Prior violations are unknown" in out["case"].decision.draft_body
+    assert not any(s.tool == "gate_no_unsupported_pattern_claim"
+                   for s in out["case"].trace)

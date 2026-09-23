@@ -112,6 +112,18 @@ def make_node_intake(db):
                 return _park({**gs, "case": case}, db, understood.reason,
                              outcome="alert")
 
+        # A decision a human has signed is final. Re-judging it -- a replay, a second
+        # run of the demo, a request from another website -- used to overwrite the
+        # decision and erase the signature. It is now refused before any model is
+        # called, and the event is left exactly as it was when it was approved.
+        if db is not None:
+            signed = db.get_decision(case.event.get("event_id"))
+            if signed and signed.get("approved_by"):
+                reason = (f"already decided and approved by {signed['approved_by']}; "
+                          f"a signed decision is not re-judged")
+                case.log("graph", "intake", {}, reason)
+                return {**gs, "case": case, "outcome": "done", "reason": reason}
+
         verdict = run_gates(case, ENTRY_GATES)
         if not verdict:
             case.log("graph", "intake", {}, f"rejected: {verdict.reason}")
@@ -127,9 +139,28 @@ def make_node_intake(db):
     return node_intake
 
 
+def _agent_failed(gs: GraphState, db, agent: str, exc: Exception) -> GraphState:
+    """Last line of defence: an agent raised something nobody anticipated.
+
+    Every other terminal path keeps the finding, and this one has to as well. A model
+    returning truncated JSON once crashed the whole case, the API answered 500, and the
+    event was never written -- a confused model lost data a dead model would not have.
+    The agents now handle malformed output themselves; this catches whatever they don't.
+    """
+    case = gs["case"]
+    case.log("graph", agent, {}, f"failed: {type(exc).__name__}: {exc}")
+    case.block(Blocker.AGENT_ERROR)
+    return _park({**gs, "case": case}, db,
+                 f"the {agent} failed unexpectedly ({type(exc).__name__}); "
+                 f"the finding is kept for a human")
+
+
 def make_node_assess(db, client, model):
     def node_assess(gs: GraphState) -> GraphState:
-        case = assess(gs["case"], client=client, model=model)
+        try:
+            case = assess(gs["case"], client=client, model=model)
+        except Exception as exc:                    # noqa: BLE001
+            return _agent_failed(gs, db, "assessor", exc)
         if case.blocked_on is Blocker.MODEL_UNAVAILABLE:
             return _park({**gs, "case": case}, db, "the model could not be reached")
         verdict = run_gates(case, POST_ASSESSOR)
@@ -143,7 +174,10 @@ def make_node_assess(db, client, model):
 
 def make_node_adjudicate(db, client, model):
     def node_adjudicate(gs: GraphState) -> GraphState:
-        case = adjudicate(gs["case"], db=db, client=client, model=model)
+        try:
+            case = adjudicate(gs["case"], db=db, client=client, model=model)
+        except Exception as exc:                    # noqa: BLE001
+            return _agent_failed(gs, db, "adjudicator", exc)
         if case.decision is None:
             reason = ("the model could not be reached"
                       if case.blocked_on is Blocker.MODEL_UNAVAILABLE
@@ -183,13 +217,45 @@ def make_node_adjudicate(db, client, model):
                 case.decision.requires_approval = True
                 case.log("graph", "gate_action_matches_the_score",
                          {"band": severity.band}, fits.reason)
+
+        # Only now, after every gate has read the model's own words: state the record
+        # in words the model did not write. The pattern gate is a word list, and a word
+        # list can be paraphrased past. A supervisor who reads "habitually ignores PPE"
+        # next to "Record: identity not confirmed -- prior violations unknown" is not
+        # misled, whatever the model managed to phrase.
+        line = record_line(case.decision)
+        case.decision.draft_body = "\n\n".join(p for p in (case.decision.draft_body, line) if p)
+        case.log("graph", "record_line", {}, line)
         return {**gs, "case": case, "outcome": ""}
     return node_adjudicate
 
 
+def record_line(decision) -> str:
+    """What the history lookup established, from the lookup rather than the prose."""
+    if decision.history_resolved is None:
+        return "Record: the worker's history was not checked for this notice."
+    if not decision.history_resolved:
+        return ("Record: identity not confirmed. Prior violations are unknown, "
+                "not zero.")
+    n, days = decision.prior_violations, decision.history_window_days
+    if n == 0:
+        return f"Record: no confirmed prior violations in the last {days} days."
+    return (f"Record: {n} confirmed prior violation{'s' if n != 1 else ''} "
+            f"in the last {days} days.")
+
+
 def make_node_record(db, bound_by):
     def node_record(gs: GraphState) -> GraphState:
-        case = record(gs["case"], db=db, bound_by=bound_by)
+        try:
+            case = record(gs["case"], db=db, bound_by=bound_by)
+        except Exception as exc:                    # noqa: BLE001
+            # The write itself failed, so there is nowhere left to keep the finding.
+            # That is an alert -- a human must look at the system, not the case.
+            case = gs["case"]
+            case.log("graph", "recorder", {}, f"failed: {type(exc).__name__}: {exc}")
+            case.block(Blocker.WRITE_UNCONFIRMED)
+            return {**gs, "case": case, "outcome": "alert",
+                    "reason": f"the write failed ({type(exc).__name__}): {exc}"}
         verdict = run_gates(case, POST_RECORDER)
         if not verdict:
             return {**gs, "case": case, "outcome": "alert", "reason": verdict.reason}

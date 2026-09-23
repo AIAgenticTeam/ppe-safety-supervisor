@@ -263,3 +263,129 @@ def test_recent_events_carry_their_decision_for_the_console_list(api):
     # "warning" -- gentler than the score, which the agent is allowed to do on its own.
     assert row["action"] == "warning" and row["severity"] == 5.0
     assert row["missing"] == ["helmet"] and row["worker_id"] is None
+
+
+# ----------------------------------------------- evidence: only evidence is served
+#
+# The roots used to include the working directory, which is the repository. Any event
+# could name any file in it -- .env with the OpenAI key, the database, the source --
+# and /evidence served it byte for byte. Evidence is now an image, under events/ or
+# fixtures/, that starts like an image.
+
+@pytest.mark.parametrize("path", [
+    "README.md",                                   # relative to the old root, the repo
+    str(ROOT / "app" / "api.py"),
+    str(ROOT / "requirements.txt"),
+    "events/../README.md",
+])
+def test_a_file_from_the_repository_is_not_evidence(api, path):
+    event = confirmed_event()
+    event["evidence"] = {"frame_path": path, "crop_path": path}
+    api.post("/events", json=event)
+    assert api.get("/evidence/evt_test_1/frame").status_code == 404
+    assert api.get("/evidence/evt_test_1/crop").status_code == 404
+
+
+def test_an_image_name_on_something_that_is_not_an_image_is_refused(api):
+    """Inside the right folder, with the right extension, and still not a photograph."""
+    fake = ROOT / "events" / "_test_not_an_image.jpg"
+    fake.parent.mkdir(parents=True, exist_ok=True)
+    fake.write_text("OPENAI_API_KEY=placeholder-not-a-key\n", encoding="utf-8")
+    try:
+        event = confirmed_event()
+        event["evidence"] = {"frame_path": str(fake)}
+        api.post("/events", json=event)
+        assert api.get("/evidence/evt_test_1/frame").status_code == 404
+    finally:
+        fake.unlink(missing_ok=True)
+
+
+def test_a_file_in_the_evidence_folder_that_is_not_an_image_type_is_refused(api):
+    notes = ROOT / "events" / "_test_notes.txt"
+    notes.parent.mkdir(parents=True, exist_ok=True)
+    notes.write_bytes(b"\xff\xd8 starts like a jpeg, named like a note")
+    try:
+        event = confirmed_event()
+        event["evidence"] = {"frame_path": str(notes)}
+        api.post("/events", json=event)
+        assert api.get("/evidence/evt_test_1/frame").status_code == 404
+    finally:
+        notes.unlink(missing_ok=True)
+
+
+# --------------------------------------------- writes from another website
+#
+# While the console is open, any page the supervisor visits can send requests to it.
+# /roster/import accepted a text/plain body and /replay accepted no body, so neither
+# needed the CORS preflight that protects the JSON endpoints.
+
+FOREIGN = [
+    {"Sec-Fetch-Site": "cross-site"},
+    {"Sec-Fetch-Site": "same-site"},               # another port on this machine
+    {"Origin": "https://attacker.example"},
+    {"Origin": "null"},                            # a sandboxed iframe
+]
+PLANT = "worker_id,name\nW-PLANTED,Planted Person\n"
+
+
+def _a_fixture():
+    names = sorted(p.name for p in (ROOT / "fixtures" / "events").glob("*.json"))
+    if not names:
+        pytest.skip("no fixture events to replay")
+    return names[0]
+
+
+@pytest.mark.parametrize("headers", FOREIGN)
+def test_another_website_cannot_import_a_roster(api, headers):
+    r = api.post("/roster/import?dry_run=false", content=PLANT,
+                 headers={**headers, "Content-Type": "text/plain"})
+    assert r.status_code == 403
+    assert api.get("/roster").json()["workers"] == []
+
+
+@pytest.mark.parametrize("headers", FOREIGN)
+def test_another_website_cannot_replay_or_post_an_event(api, headers):
+    assert api.post(f"/replay/fixtures?name={_a_fixture()}&judge=false",
+                    headers=headers).status_code == 403
+    assert api.post("/events?judge=false", json=confirmed_event(),
+                    headers=headers).status_code == 403
+    assert api.get("/events").json()["events"] == []
+
+
+def test_the_console_itself_can_still_write(api):
+    same = {"Origin": "http://testserver", "Sec-Fetch-Site": "same-origin"}
+    r = api.post("/roster/import?dry_run=false", content=PLANT,
+                 headers={**same, "Content-Type": "text/csv"})
+    assert r.status_code == 200
+    assert api.post(f"/replay/fixtures?name={_a_fixture()}&judge=false",
+                    headers=same).status_code == 200
+
+
+def test_programs_that_are_not_browsers_are_unaffected(api):
+    """The pipeline and the scripts send neither header."""
+    assert api.post("/events?judge=false", json=confirmed_event()).status_code == 201
+
+
+def test_reading_is_not_refused(api):
+    """Only writes are checked. Following a link to the console must still work."""
+    assert api.get("/events", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 200
+
+
+# ------------------------------------------------ a signed decision is final
+
+def test_a_replay_does_not_erase_an_approval(tmp_path):
+    """Posting an approved event again used to re-judge it and overwrite the decision,
+    approval and all. The second run is scripted with no model turns: if it reached an
+    agent, the case would park instead of finishing."""
+    app = create_app(tmp_path / "api.db", client=StubClient(script("escalation")))
+    api = TestClient(app)
+    api.post("/events", json=confirmed_event())
+    api.post("/decisions/evt_test_1/approve", json={"approved_by": "supervisor:k"})
+
+    again = api.post("/events", json=confirmed_event())
+    assert again.status_code == 201
+    assert again.json()["outcome"] == "done"
+    assert "supervisor:k" in again.json()["reason"]
+    decision = app.state.db.get_decision("evt_test_1")
+    assert decision["approved_by"] == "supervisor:k"
+    assert decision["action"] == "escalation"

@@ -292,16 +292,33 @@ class EventStore:
     def record_decision(self, event_id: str, action: str, severity: float, band: str,
                         citations: list[str], rationale: str = "", draft_body: str = "",
                         confidence: float | None = None,
-                        requires_approval: bool = False) -> None:
+                        requires_approval: bool = False) -> bool:
+        """Write the decision for an event. Returns False, writing nothing, if a human has
+        already signed the decision on file.
+
+        This was INSERT OR REPLACE, which deletes the row and writes a new one -- so
+        re-judging an event quietly set approved_by back to NULL, put a signed escalation
+        back in the queue, and destroyed the record of who had approved it. A signed
+        decision is now final; an unsigned one can still be replaced.
+        """
         with closing(self._connect()) as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO decisions "
+            cur = conn.execute(
+                "INSERT INTO decisions "
                 "(event_id, action, severity, band, confidence, citations, rationale, "
-                " draft_body, requires_approval, decided_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                " draft_body, requires_approval, decided_at) VALUES (?,?,?,?,?,?,?,?,?,?) "
+                "ON CONFLICT(event_id) DO UPDATE SET "
+                "  action=excluded.action, severity=excluded.severity, "
+                "  band=excluded.band, confidence=excluded.confidence, "
+                "  citations=excluded.citations, rationale=excluded.rationale, "
+                "  draft_body=excluded.draft_body, "
+                "  requires_approval=excluded.requires_approval, "
+                "  decided_at=excluded.decided_at "
+                "WHERE decisions.approved_by IS NULL",
                 (event_id, action, severity, band, confidence, json.dumps(citations),
                  rationale, draft_body, int(requires_approval),
                  datetime.now().isoformat(timespec="seconds")))
             conn.commit()
+        return cur.rowcount > 0
 
     def get_decision(self, event_id: str) -> dict | None:
         with closing(self._connect()) as conn:

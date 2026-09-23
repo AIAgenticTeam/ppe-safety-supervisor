@@ -32,12 +32,13 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).absolute().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request  # noqa: E402
-from fastapi.responses import FileResponse, Response  # noqa: E402
+from fastapi.responses import FileResponse, JSONResponse, Response  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from agents.graph import run_case  # noqa: E402
@@ -63,9 +64,21 @@ except ImportError:
     pass
 
 # Evidence is served by event id, never by a path from the request. The stored path is
-# still checked against these roots before anything is opened, because the event body
-# arrived over the network and a path inside it is not trustworthy either.
-EVIDENCE_ROOTS = [ROOT / "events", ROOT / "fixtures", Path.cwd()]
+# still checked before anything is opened, because the event body arrived over the
+# network and a path inside it is not trustworthy either.
+#
+# This list used to include Path.cwd(). The server runs from the repo root, so that one
+# entry made the whole repository servable: an event claiming its evidence was `.env`
+# got the OpenAI key back byte-for-byte, labelled as a JPEG. The old test only tried
+# paths OUTSIDE the repo, which is why it passed. Roots are now only where evidence is
+# actually written, plus any extra directories named in SAFETY_EVIDENCE_ROOTS.
+EVIDENCE_ROOTS = [ROOT / "events", ROOT / "fixtures"] + [
+    Path(p) for p in os.getenv("SAFETY_EVIDENCE_ROOTS", "").split(os.pathsep) if p]
+
+# Belt and braces: even inside an allowed root, only an actual image is served.
+# Extension alone can be a lie, so the first bytes have to agree with it.
+EVIDENCE_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+_MAGIC = {"image/jpeg": b"\xff\xd8", "image/png": b"\x89PNG"}
 
 
 # ---------------------------------------------------------------- payloads
@@ -128,13 +141,18 @@ def _safe_evidence_path(raw: str) -> Path:
     if not candidate.is_absolute():
         candidate = (ROOT / candidate)
     resolved = candidate.resolve()
+    media = EVIDENCE_TYPES.get(resolved.suffix.lower())
+    if media is None:
+        raise HTTPException(404, "evidence not available")
     for root in EVIDENCE_ROOTS:
         try:
             resolved.relative_to(root.resolve())
         except ValueError:
             continue
         if resolved.is_file():
-            return resolved
+            with open(resolved, "rb") as fh:
+                if fh.read(4).startswith(_MAGIC[media]):
+                    return resolved
         break
     raise HTTPException(404, "evidence not available")
 
@@ -152,6 +170,35 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
     app.state.db = EventStore(db_path)
     app.state.client = client
     app.state.model = model
+
+    @app.middleware("http")
+    async def refuse_cross_site_writes(request: Request, call_next):
+        """Refuse any write a browser sends on behalf of a different site.
+
+        While the console is open, any other page the supervisor visits can fire
+        requests at 127.0.0.1:8000. Most endpoints were already safe -- they require a
+        JSON body, and a cross-site JSON request needs a CORS preflight that this app
+        never grants. Two were not: /roster/import took a text/plain body and /replay
+        took no body at all, so another website could plant people on the roster, or
+        replay a real event -- which re-judged it and, before that was fixed, erased
+        its approval.
+
+        Browsers label cross-site requests themselves (Sec-Fetch-Site) and send the
+        page's Origin with every POST. The pipeline, the scripts and the tests are not
+        browsers and send neither, so they are unaffected. This covers every write
+        endpoint, including ones not written yet.
+        """
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            site = request.headers.get("sec-fetch-site")
+            origin = request.headers.get("origin")
+            host = request.headers.get("host", "")
+            foreign = site in ("cross-site", "same-site") or (
+                origin is not None
+                and (origin == "null" or urlsplit(origin).netloc != host))
+            if foreign:
+                return JSONResponse({"detail": "cross-site request refused"},
+                                    status_code=403)
+        return await call_next(request)
 
     def db() -> EventStore:
         return app.state.db
@@ -268,7 +315,8 @@ def create_app(db_path: str | Path = DEFAULT_DB, client=None,
         raw = (event.get("evidence") or {}).get(f"{kind}_path")
         if not raw:
             raise HTTPException(404, f"no {kind} stored for that event")
-        return FileResponse(_safe_evidence_path(raw), media_type="image/jpeg")
+        path = _safe_evidence_path(raw)
+        return FileResponse(path, media_type=EVIDENCE_TYPES[path.suffix.lower()])
 
     # ---- dashboard ------------------------------------------------------
 
