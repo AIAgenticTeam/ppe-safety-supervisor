@@ -13,6 +13,7 @@ model would rarely produce them on demand.
 
 import json
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -44,9 +45,16 @@ def load(fragment: str) -> dict:
 
 def confirmed_event(missing=("helmet",), zone="grinding_station", camera="cam_3",
                     worker=None, frames_missing=10, person_conf=0.9):
-    """A minimal event that passes the entry gate."""
+    """A minimal event that passes the entry gate.
+
+    Timestamped an hour ago, never at a fixed date. History and the weekly report both
+    read a rolling window back from now, so a fixed date is a time bomb: this fixture
+    once said 2026-09-16, and on the 23rd the seeded priors aged out of the 7-day window
+    and four tests went red on a codebase nobody had touched.
+    """
+    captured = (datetime.now().astimezone() - timedelta(hours=1)).isoformat(timespec="seconds")
     return {
-        "event_id": "evt_test_1", "captured_at": "2026-09-16T10:00:00+03:00",
+        "event_id": "evt_test_1", "captured_at": captured,
         "camera_id": camera, "schema_version": "1.0",
         "zone": {"name": zone, "label": zone,
                  "required_ppe": ["helmet", "goggles", "gloves"]},
